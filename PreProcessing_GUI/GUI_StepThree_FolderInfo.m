@@ -24,7 +24,7 @@ function varargout = GUI_StepThree_FolderInfo(varargin)
 
 % Last Modified by GUIDE v2.5 24-Dec-2018 09:09:20
 
-% Begin initialization code - DO NOT EDIT
+% Begin initialization code - DO NOT EDIT %
 gui_Singleton = 1;
 gui_State = struct('gui_Name',       mfilename, ...
                    'gui_Singleton',  gui_Singleton, ...
