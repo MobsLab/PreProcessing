@@ -1,5 +1,5 @@
 function varargout = GUI_StepTwo_RecordingInfo(varargin)
-% GUI_STEPTWO_RECORDINGINFO MATLAB code for GUI_StepTwo_RecordingInfo.fig
+% GUI_STEPTWO_RECORDINGINFO MATLAB code for GUI_StepTwo_RecordingInfo.fig %
 %      GUI_STEPTWO_RECORDINGINFO, by itself, creates a new GUI_STEPTWO_RECORDINGINFO or raises the existing
 %      singleton*.
 %
