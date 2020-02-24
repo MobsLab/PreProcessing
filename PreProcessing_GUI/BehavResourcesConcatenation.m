@@ -1,6 +1,6 @@
 function BehavResourcesConcatenation (FilesList, FolderSessionName, tpsCatEvt, pathtosave)
 
-%%%% TestBehavResourcesConcatenation
+%%%%% TestBehavResourcesConcatenation
 % Concatenate behavResources for any number of sessions
 % Written for PreProcessingConcatenation pipeline (author - Sophie Bagur)
 % By Dima Bryzgalov december 2018
