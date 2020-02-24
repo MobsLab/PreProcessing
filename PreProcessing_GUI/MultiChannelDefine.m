@@ -1,5 +1,5 @@
 function varargout = MultiChannelDefine(varargin)
-% MULTICHANNELDEFINE MATLAB code for MultiChannelDefine.fig
+% MULTICHANNELDEFINE MATLAB code for MultiChannelDefine.fig %
 %      MULTICHANNELDEFINE, by itself, creates a new MULTICHANNELDEFINE or raises the existing
 %      singleton*.
 %
