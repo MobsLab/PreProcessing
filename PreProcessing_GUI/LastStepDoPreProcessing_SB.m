@@ -1,5 +1,5 @@
 
-%% File by file preparation for concatenation
+%% File by file preparation for concatenation %
 clear all
 load('ExpeInfo.mat')
 BaseFileName = ['M' num2str(ExpeInfo.nmouse) '_' ExpeInfo.date '_' ExpeInfo.SessionType];
