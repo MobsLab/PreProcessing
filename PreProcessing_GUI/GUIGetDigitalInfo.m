@@ -1,5 +1,5 @@
 function varargout = GUIGetDigitalInfo(varargin)
-% GUIGETDIGITALINFO MATLAB code for GUIGetDigitalInfo.fig
+% GUIGETDIGITALINFO MATLAB code for GUIGetDigitalInfo.fig %
 %      GUIGETDIGITALINFO, by itself, creates a new GUIGETDIGITALINFO or raises the existing
 %      singleton*.
 %
