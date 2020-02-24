@@ -1,5 +1,5 @@
 function varargout = GUIGetSpikeInfo(varargin)
-% GUIGETSPIKEINFO MATLAB code for GUIGetSpikeInfo.fig
+% GUIGETSPIKEINFO MATLAB code for GUIGetSpikeInfo.fig % 
 %      GUIGETSPIKEINFO, by itself, creates a new GUIGETSPIKEINFO or raises the existing
 %      singleton*.
 %
