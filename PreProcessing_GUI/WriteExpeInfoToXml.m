@@ -1,6 +1,6 @@
 function WriteExpeInfoToXml(ExpeInfo)
 
-%% read the model file to be completed
+%% read the model file to be completed %
 dr = dropbox;
 copyfile([dr '/Kteam/PrgMatlab/Processing/NomenclatureCodes/ModelXmlPreProcessing.xml'],'amplifier.xml')
 XmlStructure = xml2struct_SB('amplifier.xml');
