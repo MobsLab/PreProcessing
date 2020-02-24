@@ -1,5 +1,5 @@
 function varargout = GUIGetFilesToConcatenate(varargin)
-% GUIGETFILESTOCONCATENATE MATLAB code for GUIGetFilesToConcatenate.fig
+% GUIGETFILESTOCONCATENATE MATLAB code for GUIGetFilesToConcatenate.fig %
 %      GUIGETFILESTOCONCATENATE, by itself, creates a new GUIGETFILESTOCONCATENATE or raises the existing
 %      singleton*.
 %
