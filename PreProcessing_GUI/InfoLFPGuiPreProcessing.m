@@ -1,4 +1,4 @@
-%% Get ExpeInfo Location
+%% Get ExpeInfo Location % 
 ExpeInfoLocation=uigetdir('','Folder with ExpeInfo');
 load([ExpeInfoLocation,'ExpeInfo.mat'],'ExpeInfo');
 save('FolderName.mat','ExpeInfoLocation')
