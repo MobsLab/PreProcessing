@@ -1,5 +1,5 @@
 function varargout = MultiChannelRefDefine(varargin)
-% MultiChannelRefDefine MATLAB code for MultiChannelRefDefine.fig
+% MultiChannelRefDefine MATLAB code for MultiChannelRefDefine.fig %
 %      MultiChannelRefDefine, by itself, creates a new MultiChannelRefDefine or raises the existing
 %      singleton*.
 %
