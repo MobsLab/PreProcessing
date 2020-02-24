@@ -1,5 +1,5 @@
 function varargout = GUIGetChannelInfo(varargin)
-% GUIGETCHANNELINFO MATLAB code for GUIGetChannelInfo.fig
+% GUIGETCHANNELINFO MATLAB code for GUIGetChannelInfo.fig %
 %      GUIGETCHANNELINFO, by itself, creates a new GUIGETCHANNELINFO or raises the existing
 %      singleton*.
 %
