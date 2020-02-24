@@ -1,5 +1,5 @@
 function varargout = GUI_StepOne_ExperimentInfo(varargin)
-% GUI_STEPONE_EXPERIMENTINFO MATLAB code for GUI_StepOne_ExperimentInfo.fig
+% GUI_STEPONE_EXPERIMENTINFO MATLAB code for GUI_StepOne_ExperimentInfo.fig % 
 %      GUI_STEPONE_EXPERIMENTINFO, by itself, creates a new GUI_STEPONE_EXPERIMENTINFO or raises the existing
 %      singleton*.
 %
