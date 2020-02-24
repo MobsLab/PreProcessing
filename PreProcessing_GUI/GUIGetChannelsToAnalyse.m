@@ -1,6 +1,6 @@
 function GUIGetChannelsToAnalyse
 load('ExpeInfo.mat')
-%check if some channels already exists
+%check if some channels already exists %
 AddOpts.Resize = 'on';
 AddOpts.WindowStyle = 'normal';
 AddOpts.Interpreter = 'tex';
