@@ -58,6 +58,9 @@ handles.output = hObject;
 load('ExpeInfo.mat')
 
 ExpeInfo.PreProcessingInfo.IsThereEphys = questdlg('Is there ephys?','FileTypes','Yes','No','Yes');
+if strcmp(ExpeInfo.PreProcessingInfo.IsThereEphys, 'Yes')
+    ExpeInfo.PreProcessingInfo.TypeOfSystem = questdlg('Which software did you use?','FileTypes','Intan','OpenEphys','Intan');
+end
 ExpeInfo.PreProcessingInfo.IsThereBehav = questdlg('Is there behaviour?','FileTypes','Yes','No','Yes');
 save('ExpeInfo.mat','ExpeInfo')
 
@@ -94,11 +97,22 @@ for k = 1 : NumFilesToConcatenate
         'units','normalized','position',[0.92 0.9-(0.9/(NumFilesToConcatenate+1))*k 0.08 0.02],'String','Ref done',...
         'callback', {@RefDone,k});
     
-    handles.(['GetFileLocation',num2str(k)])= uicontrol(handles.figure1,'style','radiobutton',...
-        'units','normalized','position',[0.92 0.9-(0.9/(NumFilesToConcatenate+1))*k+0.02 0.08 0.02],'String','Merge done',...
-        'callback', {@MergeDone,k});
+    if strcmp(ExpeInfo.PreProcessingInfo.TypeOfSystem, 'Intan')
+        handles.(['GetFileLocation',num2str(k)])= uicontrol(handles.figure1,'style','radiobutton',...
+            'units','normalized','position',[0.92 0.9-(0.9/(NumFilesToConcatenate+1))*k+0.02 0.08 0.02],'String','Merge done',...
+            'callback', {@MergeDone,k});
+    elseif strcmp(ExpeInfo.PreProcessingInfo.TypeOfSystem, 'OpenEphys')
+        handles.(['GetFileLocation',num2str(k)])= uicontrol(handles.figure1,'style','radiobutton',...
+            'units','normalized','position',[0.92 0.9-(0.9/(NumFilesToConcatenate+1))*k+0.02 0.08 0.02],'String','Intan recorded',...
+            'callback', {@IntanRecorded,k});
+    end
     
-    ExpeInfo.PreProcessingInfo.MergeDone{k} = 0;
+    if strcmp(ExpeInfo.PreProcessingInfo.TypeOfSystem, 'Intan')
+        ExpeInfo.PreProcessingInfo.MergeDone{k} = 0;
+    else
+        ExpeInfo.PreProcessingInfo.MergeDone{k} = 1;
+        ExpeInfo.PreProcessingInfo.IntanRecorded{k} = 0;
+    end
     ExpeInfo.PreProcessingInfo.RefDone{k} = 0;
 
     
@@ -143,7 +157,7 @@ set(TempData.(['FileLocation_Ephys',num2str(Num)]),'String',directoryname);
 guidata(hObject,TempData)
 set(TempData.(['FileLocation_Ephys',num2str(Num)]),'BackGroundColor',[0.8 0.4 0.2])
 
-% get the folder with behaviour
+% get the folder with behaIntanRecordedviour
 switch TempData.ExpeInfo.PreProcessingInfo.IsThereBehav
     case 'Yes'
 directoryname = uigetdir(cd, 'Click on the behaviour folder');
@@ -184,6 +198,11 @@ guidata(hObject,TempData)
 function MergeDone(hObject, eventdata, Num)
 TempData = guidata(hObject);
 TempData.ExpeInfo.PreProcessingInfo.MergeDone{Num} = hObject.Value;
+guidata(hObject,TempData)
+
+function IntanRecorded(hObject, eventdata, Num)
+TempData = guidata(hObject);
+TempData.ExpeInfo.PreProcessingInfo.IntanRecorded{Num} = hObject.Value;
 guidata(hObject,TempData)
 
 

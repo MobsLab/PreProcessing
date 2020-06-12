@@ -1,4 +1,4 @@
-function BehavResourcesConcatenation (FilesList, FolderSessionName, tpsCatEvt, pathtosave)
+function BehavResourcesConcatenation (FilesList, FolderSessionName, tpsCatEvt, pathtosave, varargin)
 
 %%%% TestBehavResourcesConcatenation
 % Concatenate behavResources for any number of sessions
@@ -8,11 +8,11 @@ function BehavResourcesConcatenation (FilesList, FolderSessionName, tpsCatEvt, p
 % This code concatenates all possible behavResources.mat into one structure
 % with the length that is equal to number of concatenated sessions (behavResources)
 % !!! Time is unified and united in this structure !!!
-% 
+%
 % Also, it creates concatenated variables were the whole day of experiment
 % is concatenated. You can restrict your data to specifically created
 % epochs with the name <'SessionEpoch.SessionName'>
-% 
+%
 % Please find description of all variables inside the code
 %
 %  USAGE
@@ -24,9 +24,28 @@ function BehavResourcesConcatenation (FilesList, FolderSessionName, tpsCatEvt, p
 %    tpsCatEvt              time of beginning and end of each session
 %    pathtosave             Path to save behavioral resources
 %
-% 
+%
 %%
 %%%%%%%%%%%%%%%%%%%%%%%% -----------------------%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%% Optional arguments
+for i = 1:2:length(varargin)
+    if ~ischar(varargin{i})
+        error(['Parameter ' num2str(i+2) ' is not a property (type ''help <a href="matlab:help FindRipples">FindRipples</a>'' for details).']);
+    end
+    switch(lower(varargin{i}))
+        case 'startinfo'
+            TTLInfo_sess = varargin{i+1};
+            if ~iscell(TTLInfo_sess) && length(FilesList)~=length(TTLInfo_sess)
+                error('Incorrect value for property ''StartInfo'' - should be a cell with TTLInfo for each session');
+            end
+        case 'intanrecorded'
+            IntanRecorded = varargin{i+1};
+            if ~iscell(IntanRecorded) && length(FilesList)~=length(TTLInfo_sess)
+                error('Incorrect value for property ''IntanRecorded'' - should be a cell with info for each session');
+            end
+    end
+end
 
 %% Load data
 for i = 1:length(FilesList)
@@ -42,6 +61,27 @@ end
 %% Start creating the structure - names of sessions
 for i=1:length(FilesList)
     behavResources(i).SessionName = FolderSessionName{i};
+end
+
+%% Correct back the time for Open Ephys
+% Timestamps in matlab-generated behavioral files come shifted 1 sec in the future.
+% This was done to account for the peculiarity of Intan software -
+% It records in the file data that start 1 sec before launching TTL came and
+% 1 sec after the stopping TTL arrived. To correct 1 sec mismatch between ephy
+% and behavioral data we simply add 1 sec to all times recorded in Matlab.
+% However, in OpenEphys this buffer does not exist. So we had to take this 1 sec back.
+%
+% We take it only from the first file because the rest is corrected by actual
+% length of ephy files
+
+if exist('TTLInfo_sess', 'var') && exist('IntanRecorded', 'var')
+    for isess = 1:length(FilesList)
+        if ~IntanRecorded{isess}
+            a{isess} = CorrectTimeBackToEphys(a{isess}, TTLInfo_sess{isess});
+        end
+    end
+else
+    warning('Intan only concatentenation. If you''ve recorded OpenEphys - stop and redo');
 end
 
 %% Add constants in the structure - note that they could be different for different sessions
@@ -82,7 +122,7 @@ for i=1:length(FilesList)
     else
         behavResources(i).Zone = [];
     end
-
+    
     if isfield(a{i}, 'ZoneLabels')
         behavResources(i).ZoneLabels = a{i}.ZoneLabels; % Names of Zones
     else
@@ -106,7 +146,7 @@ for i=1:length(FilesList)
     else
         behavResources(i).DiodMask = [];
     end
-
+    
     if isfield(a{i}, 'DiodThresh')
         behavResources(i).DiodThresh = a{i}.DiodThresh; % NosePoke Tracking: threshold for the synchronizing diod flashing
     else
@@ -156,15 +196,16 @@ for i = 1:length(FilesList)
 end
 clear TimeTemp
 
-st = cell2mat(tpsCatEvt);
-st = st(1:2:end);
-en = cell2mat(tpsCatEvt);
-en = en(2:2:end);
+beg_end = cell2mat(tpsCatEvt);
+st = beg_end(1:2:end);
+en = beg_end(2:2:end);
 
+duration = nan(length(st),1);
+lasttime = nan(length(st),1);
 for i=1:length(st)
     duration(i) = en(i)-st(i);
     lasttime(i) = en(i);
-end    
+end
 
 %% Check for time inconsistencies
 for i=1:length(FilesList)
@@ -180,14 +221,14 @@ end
 
 if ~isempty(find(diff(ImdifftsdTime)<0, 1))
     disp('MANUAL MODE !!! - Time problem')
-    keyboard;
+    keyboard;  % to resume process type dbcont
 end
 
 clear ImdifftsdTimeTemp ImdifftsdTime
 
 %% Concatenate time-dependent variables
 
-% Concatenate PosMat (type - array) 
+% Concatenate PosMat (type - array)
 for i=1:length(FilesList)
     PosMatTemp{i} = a{i}.PosMat; % First column - time in sec, second column - X, third column - Y, fourth column - events
 end
@@ -199,7 +240,7 @@ for i = 1:length(FilesList)
 end
 clear PosMatTemp
 
-% Concatenate PosMatInit (type - array) 
+% Concatenate PosMatInit (type - array)
 for i=1:length(FilesList)
     PosMatInitTemp{i} = a{i}.PosMatInit; % Raw PosMat, it is interpolated to PosMat (where periods where mouse was lost are interpolated)
 end
@@ -211,10 +252,10 @@ for i = 1:length(FilesList)
 end
 clear PosMatInitTemp
 
-% Concatenate im_diff (type - array) 
+% Concatenate im_diff (type - array)
 for i=1:length(FilesList) % First column - time in sec, second column - difference in pixels between mask and a frame,...
     % third column - number of pixels used for subtraction
-    im_diffTemp{i} = a{i}.im_diff; 
+    im_diffTemp{i} = a{i}.im_diff;
 end
 for i=1:(length(FilesList)-1)
     im_diffTemp{i+1}(:,1) = im_diffTemp{i+1}(:,1) + (sum(duration(1:i)));
@@ -224,9 +265,9 @@ for i = 1:length(FilesList)
 end
 clear im_diffTemp
 
-% Concatenate im_diffInit (type - array) 
+% Concatenate im_diffInit (type - array)
 for i=1:length(FilesList) % Raw im_Diff, it is interpolated to im_Diff (where periods where mouse was lost are interpolated)
-    im_diffInitTemp{i} = a{i}.im_diffInit; 
+    im_diffInitTemp{i} = a{i}.im_diffInit;
 end
 for i=1:(length(FilesList)-1)
     im_diffInitTemp{i+1}(:,1) = im_diffInitTemp{i+1}(:,1) + (sum(duration(1:i)));
@@ -295,7 +336,7 @@ clear VtsdTimeTemp VtsdDataTemp
 
 %%%%% NON-OBLIGATORY
 
-% Concatenate GotFrame (type - array) 
+% Concatenate GotFrame (type - array)
 for i=1:length(FilesList) % Array of 0 and 1 - whether this frame is recorded to the video or not
     if isfield(a{i}, 'GotFrame')
         GotFrameTemp{i} = a{i}.GotFrame;
@@ -308,7 +349,7 @@ for i = 1:length(FilesList)
 end
 clear GotFrameTemp
 
-% Concatenate ZoneIndices (type array of indices * N - number of Zones) 
+% Concatenate ZoneIndices (type array of indices * N - number of Zones)
 for i=1:length(FilesList) % Time indices of the occasions when the animal was in the Zone
     if isfield(a{i}, 'ZoneIndices')
         for k = 1:length(a{i}.ZoneIndices)
@@ -404,7 +445,7 @@ for i=1:length(FilesList)
 end
 clear ZoneEpochTempStart ZoneEpochTempEnd ZoneEpochStart ZoneEpochEnd
 
-% Concatenate CleanPosMat (type - array) 
+% Concatenate CleanPosMat (type - array)
 for i=1:length(FilesList)
     if isfield(a{i},'CleanPosMat')
         CleanPosMatTemp{i} = a{i}.CleanPosMat; % First column - time in sec, second column - X, third column - Y, fourth column - events
@@ -428,7 +469,7 @@ for i = 1:length(FilesList)
 end
 clear CleanPosMatTemp
 
-% Concatenate CleanPosMatInit (type - array) 
+% Concatenate CleanPosMatInit (type - array)
 for i=1:length(FilesList)
     if isfield(a{i},'CleanPosMatInit')
         CleanPosMatInitTemp{i} = a{i}.CleanPosMatInit; % First column - time in sec, second column - X, third column - Y, fourth column - events
@@ -495,7 +536,7 @@ for i=1:(length(FilesList)-1)
 end
 for i = 1:length(FilesList)
     if ~isempty(YtsdTimeTemp{i})
-       behavResources(i).CleanYtsd = tsd(YtsdTimeTemp{i}, YtsdDataTemp{i});
+        behavResources(i).CleanYtsd = tsd(YtsdTimeTemp{i}, YtsdDataTemp{i});
     else
         behavResources(i).CleanYtsd = [];
     end
@@ -653,7 +694,7 @@ for i=1:(length(FilesList)-1)
 end
 for i = 1:length(FilesList)
     if ~isempty(YtsdTimeTemp{i})
-       behavResources(i).AlignedYtsd = tsd(YtsdTimeTemp{i}, YtsdDataTemp{i});
+        behavResources(i).AlignedYtsd = tsd(YtsdTimeTemp{i}, YtsdDataTemp{i});
     else
         behavResources(i).AlignedYtsd = [];
     end
@@ -682,7 +723,7 @@ end
 for i=1:length(FilesList)
     if ~isempty (ZoneEpochTempStart{i})
         for k = 1:length(a{i}.ZoneEpochAligned)
-           behavResources(i).ZoneEpochAligned{k} = intervalSet(ZoneEpochTempStart{i}{k}, ZoneEpochTempEnd{i}{k});
+            behavResources(i).ZoneEpochAligned{k} = intervalSet(ZoneEpochTempStart{i}{k}, ZoneEpochTempEnd{i}{k});
         end
     else
         behavResources(i).ZoneEpochAligned = [];
@@ -718,9 +759,9 @@ clear LinearDistTimeTemp LinearDistDataTemp
 %% Concatenated tsd and intervalSet variables
 
 %%% OBLIGATORY
-% Concatenate PosMat (type - array) 
+% Concatenate PosMat (type - array)
 for i=1:length(FilesList)
-    PosMatTemp{i} = a{i}.PosMat; 
+    PosMatTemp{i} = a{i}.PosMat;
 end
 for i=1:(length(FilesList)-1)
     PosMatTemp{i+1}(:,1) = PosMatTemp{i+1}(:,1) + (sum(duration(1:i)));
@@ -732,9 +773,9 @@ end
 TimeInSec = PosMat(:,1);
 clear PosMatTemp
 
-% Concatenate PosMatInit (type - array) 
+% Concatenate PosMatInit (type - array)
 for i=1:length(FilesList)
-    PosMatInitTemp{i} = a{i}.PosMatInit; 
+    PosMatInitTemp{i} = a{i}.PosMatInit;
 end
 for i=1:(length(FilesList)-1)
     PosMatInitTemp{i+1}(:,1) = PosMatInitTemp{i+1}(:,1) + (sum(duration(1:i)));
@@ -745,9 +786,9 @@ for i = 2:length(FilesList)
 end
 clear PosMatInitTemp
 
-% Concatenate im_diff (type - array) 
+% Concatenate im_diff (type - array)
 for i=1:length(FilesList)
-    im_diffTemp{i} = a{i}.im_diff; 
+    im_diffTemp{i} = a{i}.im_diff;
 end
 for i=1:(length(FilesList)-1)
     im_diffTemp{i+1}(:,1) = im_diffTemp{i+1}(:,1) + (sum(duration(1:i)));
@@ -758,9 +799,9 @@ for i = 2:length(FilesList)
 end
 clear im_diffTemp
 
-% Concatenate im_diffInit (type - array) 
+% Concatenate im_diffInit (type - array)
 for i=1:length(FilesList)
-    im_diffInitTemp{i} = a{i}.im_diffInit; 
+    im_diffInitTemp{i} = a{i}.im_diffInit;
 end
 for i=1:(length(FilesList)-1)
     im_diffInitTemp{i+1}(:,1) = im_diffInitTemp{i+1}(:,1) + (sum(duration(1:i)));
@@ -787,7 +828,7 @@ for i = 2:length(FilesList)
 end
 
 Imdifftsd = tsd(ImdifftsdTime, ImdifftsdData);
-TimeInTsd = ImdifftsdTime; 
+TimeInTsd = ImdifftsdTime;
 clear ImdifftsdTimeTemp ImdifftsdDataTemp ImdifftsdTime ImdifftsdData
 
 % Concatenate Xtsd (type single tsd)
@@ -855,7 +896,7 @@ clear VtsdTimeTemp VtsdDataTemp VtsdTime VtsdData
 
 %%%%% NON-OBLIGATORY
 
-% Concatenate GotFrame (type - array) 
+% Concatenate GotFrame (type - array)
 for i=1:length(FilesList)
     if isfield(a{i}, 'GotFrame')
         GotFrameTemp{i} = a{i}.GotFrame;
@@ -1056,7 +1097,7 @@ end
 MouseTemp = [MouseTempTime MouseTempData];
 clear MouseTempTime MouseTempData MouseTempTimeTemp MouseTempDataTemp
 
-% Concatenate CleanPosMat (type - array) 
+% Concatenate CleanPosMat (type - array)
 for i=1:length(FilesList)
     if isfield(a{i},'CleanPosMat')
         PosMatTemp{i} = a{i}.CleanPosMat;
@@ -1074,7 +1115,7 @@ end
 TimeInSec = CleanPosMat(:,1);
 clear PosMatTemp
 
-% Concatenate CleanPosMatInit (type - array) 
+% Concatenate CleanPosMatInit (type - array)
 for i=1:length(FilesList)
     if isfield(a{i},'CleanPosMatInit')
         PosMatTemp{i} = a{i}.CleanPosMatInit;
@@ -1450,13 +1491,13 @@ else
     end
     if exist('ZoneIndices', 'var')
         save([pathtosave 'behavResources.mat'], 'ZoneIndices', '-append');
-    end 
+    end
     if exist('ZoneEpoch', 'var')
         save([pathtosave 'behavResources.mat'], 'ZoneEpoch', '-append');
-    end 
+    end
     if exist('FreezeEpoch', 'var')
         save([pathtosave 'behavResources.mat'], 'FreezeEpoch', '-append');
-    end 
+    end
     if exist('CleanPosMat', 'var')
         save([pathtosave 'behavResources.mat'], 'CleanPosMat', '-append');
     end

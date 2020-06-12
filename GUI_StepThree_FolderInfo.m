@@ -99,7 +99,6 @@ function varargout = GUI_StepThree_FolderInfo_OutputFcn(hObject, eventdata, hand
 % Get default command line output from handles structure
 varargout{1} = handles.output;
 
-
 % --- Executes on button press in MergeCheckbox.
 function MergeCheckbox_Callback(hObject, eventdata, handles)
 TempData = guidata(hObject);
@@ -111,8 +110,11 @@ TempData = guidata(hObject);
 ExpeInfo = TempData.ExpeInfo;
 save('ExpeInfo.mat','ExpeInfo')
 delete(TempData.figure1)
-LastStepDoPreProcessing_SB
-
+if strcmp(ExpeInfo.PreProcessingInfo.TypeOfSystem, 'Intan')
+    LastStepDoPreProcessing_SB
+elseif strcmp(ExpeInfo.PreProcessingInfo.TypeOfSystem, 'OpenEphys')
+    LastStep_PreProcessing_OE_DB
+end
 
 function GetDataFolders_Callback(hObject, eventdata, handles)    
     FigureID = guidata(GUIGetFilesToConcatenate);
@@ -124,10 +126,7 @@ function GetDataFolders_Callback(hObject, eventdata, handles)
     guidata(hObject,TempData)
     set(handles.ChooseFolderOfInterest,'string',strjoin(ExpeInfo.PreProcessingInfo.FolderForConcatenation_Ephys,'|'))
     
-
     
-    
-  
 function ChooseFolderOfInterest_Callback(hObject, eventdata, handles)
 TempData = guidata(hObject);
 items = get(hObject,'String')
