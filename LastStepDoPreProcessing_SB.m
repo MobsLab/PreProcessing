@@ -1,11 +1,10 @@
-
+ 
 %% File by file preparation for concatenation
 clear all
 load('ExpeInfo.mat')
 BaseFileName = ['M' num2str(ExpeInfo.nmouse) '_' ExpeInfo.date '_' ExpeInfo.SessionType];
 FinalFolder = cd;
-
-
+is_OpenEphys = false;
 
 switch ExpeInfo.PreProcessingInfo.IsThereEphys
     case 'Yes'
@@ -82,7 +81,45 @@ switch ExpeInfo.PreProcessingInfo.IsThereEphys
                 disp(['file is ref subtracted - merging...'])
                 % Create the xml
                 WriteExpeInfoToXml(ExpeInfo)
+                 disp('file is unpreprocessed - subtracting ref...')
+                % Create the xml
+                WriteExpeInfoToXml(ExpeInfo)
                 
+                
+                % subtract the reference
+                RefChannel = ExpeInfo.ChannelToAnalyse.Ref;
+                % do subtraction on all the wideband channels
+                ChanToSub = [0 : ExpeInfo.PreProcessingInfo.NumWideband-1];
+                ChanToSub(ChanToSub==RefChannel) = [];
+                % special case for breathing
+                if isfield(ExpeInfo.ChannelToAnalyse,'Respi')
+                    ChanToSub(ChanToSub==ExpeInfo.ChannelToAnalyse.Respi) = [];
+                end
+                ChanToSave = 0 :ExpeInfo.PreProcessingInfo.NumWideband-1;
+                ChanToSave(ChanToSub+1) = [];
+                % Do the subtraction
+                RefSubtraction_multi('amplifier.dat',ExpeInfo.PreProcessingInfo.NumWideband,1,['M' num2str(ExpeInfo.nmouse)],ChanToSub,RefChannel,ChanToSave);
+                
+                disp('file is ref subtracted - merging...')
+                % Merge
+                movefile(['amplifier_M' num2str(ExpeInfo.nmouse) '.dat'], 'amplifier-wideband.dat');
+                if ExpeInfo.PreProcessingInfo.NumAccelero>0
+                    movefile('auxiliary.dat', 'amplifier-accelero.dat');
+                end
+                if ExpeInfo.PreProcessingInfo.NumDigChan>0
+                    movefile('digitalin.dat', 'amplifier-digin.dat');
+                end
+                if ExpeInfo.PreProcessingInfo.NumAnalog>0
+                    movefile('analogin.dat', 'amplifier-analogin.dat');
+                end
+                system('ndm_mergedat amplifier')
+                
+                disp('file is merged and ref subtracted - copying ...')
+                % copy the file
+                copyfile(fullfile(ExpeInfo.PreProcessingInfo.FolderForConcatenation_Ephys{f}, 'amplifier.dat'),...
+                    fullfile(FinalFolder, [BaseFileName '-' sprintf('%02d',f) '.dat']));
+                copyfile(fullfile(ExpeInfo.PreProcessingInfo.FolderForConcatenation_Ephys{f}, 'amplifier.xml'),...
+                    fullfile(FinalFolder, [BaseFileName '-' sprintf('%02d',f) '.xml']));
                 % Merge
                 if exist(['amplifier_M' num2str(ExpeInfo.nmouse) '.dat'], 'file') == 2
                     movefile(['amplifier_M' num2str(ExpeInfo.nmouse) '.dat'], 'amplifier-wideband.dat');
@@ -162,7 +199,7 @@ switch ExpeInfo.PreProcessingInfo.IsThereEphys
         TimeBeginRec = TimeBeginRec_Allfiles(1,:);
         save([FinalFolder filesep 'TimeRec.mat'],'TimeEndRec','TimeBeginRec','TimeEndRec_Allfiles','TimeBeginRec_Allfiles')
         
-        %% What's this???
+        %% %% Create session-wide .xml
         copyfile([FinalFolder filesep BaseFileName '-' sprintf('%02d',f) '.xml'],...
             [FinalFolder filesep BaseFileName '.xml']);
 
@@ -291,65 +328,65 @@ switch ExpeInfo.PreProcessingInfo.IsThereEphys
             else
                 
                 % Do the preprcessing steps%% behaviour (Camera)
-% First sort out times if they don't yet exist because tehre is no ephys
-switch ExpeInfo.PreProcessingInfo.IsThereBehav
-    case 'Yes'
-        switch ExpeInfo.PreProcessingInfo.IsThereEphys
-            case 'No'
-                tps = 0;
-                tpsCatEvt = 0;
-                for f = 1:length(ExpeInfo.PreProcessingInfo.FolderForConcatenation_Behav)
-                    
-                    load([ExpeInfo.PreProcessingInfo.FolderForConcatenation_Behav{f} filesep 'behavResources.mat'] ,'PosMat')
-                    tps = tps + max(PosMat(:,1));
-                    tpsCatEvt = [tpsCatEvt, [tps;tps]']; % in seconds
-                    
+                % First sort out times if they don't yet exist because tehre is no ephys
+                switch ExpeInfo.PreProcessingInfo.IsThereBehav
+                    case 'Yes'
+                        switch ExpeInfo.PreProcessingInfo.IsThereEphys
+                            case 'No'
+                                tps = 0;
+                                tpsCatEvt = 0;
+                                for f = 1:length(ExpeInfo.PreProcessingInfo.FolderForConcatenation_Behav)
+
+                                    load([ExpeInfo.PreProcessingInfo.FolderForConcatenation_Behav{f} filesep 'behavResources.mat'] ,'PosMat')
+                                    tps = tps + max(PosMat(:,1));
+                                    tpsCatEvt = [tpsCatEvt, [tps;tps]']; % in seconds
+
+                                end
+                                tpsCatEvt(end) = [];
+                                tpsCatEvt = num2cell(tpsCatEvt);
+
+                                try
+                                    save([FinalFolder 'behavResources'],'tpsCatEvt','-append')
+                                catch
+                                    disp('Creating behavResources.mat')
+                                    save([FinalFolder 'behavResources'],'tpsCatEvt')
+                                end
+                            case 'Yes'
+                                disp('')
+                        end
+                    case 'No'
+                        disp('')
                 end
-                tpsCatEvt(end) = [];
-                tpsCatEvt = num2cell(tpsCatEvt);
-                
-                try
-                    save([FinalFolder 'behavResources'],'tpsCatEvt','-append')
-                catch
-                    disp('Creating behavResources.mat')
-                    save([FinalFolder 'behavResources'],'tpsCatEvt')
-                end
-            case 'Yes'
-                disp('')
-        end
-    case 'No'
-        disp('')
-end
 
 
-switch ExpeInfo.PreProcessingInfo.IsThereBehav
-    case 'Yes'
-        
-        if ~strcmpi(ExpeInfo.CameraType, 'None')
-            if  length(ExpeInfo.PreProcessingInfo.FolderForConcatenation_Behav)==1
-                copyfile([ExpeInfo.PreProcessingInfo.FolderForConcatenation_Behav{1} filesep 'behavResources.mat'],...
-                    [FinalFolder filesep 'behavResources-temp.mat']);
-                TempVar = load([FinalFolder filesep 'behavResources-temp.mat']);
-                save([FinalFolder filesep 'behavResources.mat'],'-struct','TempVar','-append')
-                delete([FinalFolder filesep 'behavResources-temp.mat'])
-                
-            else
-                for f = 1:length(ExpeInfo.PreProcessingInfo.FolderForConcatenation_Behav)
-                    
-                    copyfile([ExpeInfo.PreProcessingInfo.FolderForConcatenation_Behav{f} filesep 'behavResources.mat'],...
-                        [FinalFolder filesep 'behavResources-' sprintf('%02d',f) '.mat']);
-                    filelist{f} = [FinalFolder filesep 'behavResources-' sprintf('%02d',f) '.mat'];
-                    
-                end
-                BehavResourcesConcatenation(filelist, ExpeInfo.PreProcessingInfo.FolderSessionName, tpsCatEvt, FinalFolder)
-            end
-        end
-        
-    case 'No'
-end
+                switch ExpeInfo.PreProcessingInfo.IsThereBehav
+                    case 'Yes'
 
-disp('All done, you''re good! Jesus loves you. And your momma too')
-disp('All hail the Holy Octopus')
+                        if ~strcmpi(ExpeInfo.CameraType, 'None')
+                            if  length(ExpeInfo.PreProcessingInfo.FolderForConcatenation_Behav)==1
+                                copyfile([ExpeInfo.PreProcessingInfo.FolderForConcatenation_Behav{1} filesep 'behavResources.mat'],...
+                                    [FinalFolder filesep 'behavResources-temp.mat']);
+                                TempVar = load([FinalFolder filesep 'behavResources-temp.mat']);
+                                save([FinalFolder filesep 'behavResources.mat'],'-struct','TempVar','-append')
+                                delete([FinalFolder filesep 'behavResources-temp.mat'])
+
+                            else
+                                for f = 1:length(ExpeInfo.PreProcessingInfo.FolderForConcatenation_Behav)
+
+                                    copyfile([ExpeInfo.PreProcessingInfo.FolderForConcatenation_Behav{f} filesep 'behavResources.mat'],...
+                                        [FinalFolder filesep 'behavResources-' sprintf('%02d',f) '.mat']);
+                                    filelist{f} = [FinalFolder filesep 'behavResources-' sprintf('%02d',f) '.mat'];
+
+                                end
+                                BehavResourcesConcatenation(filelist, ExpeInfo.PreProcessingInfo.FolderSessionName, tpsCatEvt, FinalFolder)
+                            end
+                        end
+
+                    case 'No'
+                end
+
+                disp('All done, you''re good! Jesus loves you. And your momma too')
+                disp('All hail the Holy Octopus')
 
                 system(['ndm_hipass ' BaseFileName])
                 system(['ndm_extractspikes ' BaseFileName])
@@ -416,7 +453,7 @@ switch ExpeInfo.PreProcessingInfo.IsThereBehav
                     filelist{f} = [FinalFolder filesep 'behavResources-' sprintf('%02d',f) '.mat'];
                     
                 end
-                BehavResourcesConcatenation(filelist, ExpeInfo.PreProcessingInfo.FolderSessionName, tpsCatEvt, FinalFolder)
+                BehavResourcesConcatenation(filelist, ExpeInfo.PreProcessingInfo.FolderSessionName, tpsCatEvt, FinalFolder, is_OpenEphys)
             end
         end
         
