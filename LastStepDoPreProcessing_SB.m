@@ -453,7 +453,7 @@ switch ExpeInfo.PreProcessingInfo.IsThereBehav
                     filelist{f} = [FinalFolder filesep 'behavResources-' sprintf('%02d',f) '.mat'];
                     
                 end
-                BehavResourcesConcatenation(filelist, ExpeInfo.PreProcessingInfo.FolderSessionName, tpsCatEvt, FinalFolder, is_OpenEphys)
+                BehavResourcesConcatenation(filelist, ExpeInfo.PreProcessingInfo.FolderSessionName, tpsCatEvt, FinalFolder)
             end
         end
         
