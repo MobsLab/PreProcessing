@@ -360,7 +360,7 @@ switch ExpeInfo.PreProcessingInfo.IsThereBehav
                 copyfile([ExpeInfo.PreProcessingInfo.FolderForConcatenation_Behav{1} filesep 'behavResources.mat'],...
                     [FinalFolder filesep 'behavResources-temp.mat']);
                 TempVar = load([FinalFolder filesep 'behavResources-temp.mat']);
-                TempVar = CorrectTimeBackToEphys(TempVar);
+                TempVar = CorrectTimeBackToEphys(TempVar, TTLInfo_sess{1});
                 save([FinalFolder filesep 'behavResources.mat'],'-struct','TempVar','-append')
                 delete([FinalFolder filesep 'behavResources-temp.mat'])
                 
