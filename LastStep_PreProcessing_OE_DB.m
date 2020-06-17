@@ -59,6 +59,7 @@ switch ExpeInfo.PreProcessingInfo.IsThereEphys
                     [BaseFileName '-' sprintf('%02d',f) '.dat']), FinalFolder);
                 copyfile(fullfile(ExpeInfo.PreProcessingInfo.FolderForConcatenation_Ephys{f}, 'amplifier.xml'),...
                     fullfile(FinalFolder, [BaseFileName '-' sprintf('%02d',f) '.xml']));
+                delete([ExpeInfo.PreProcessingInfo.FolderForConcatenation_Ephys{f} filesep 'amplifier.xml']);
                 
             elseif  ExpeInfo.PreProcessingInfo.RefDone{f}==0
                 disp('file is merged - subtracting ref ...')
@@ -88,6 +89,7 @@ switch ExpeInfo.PreProcessingInfo.IsThereEphys
                     fullfile(FinalFolder, [BaseFileName '-' sprintf('%02d',f) '.dat']));
                 copyfile([ExpeInfo.PreProcessingInfo.FolderForConcatenation_Ephys{f} filesep 'amplifier.xml'],...
                     fullfile(FinalFolder, [BaseFileName '-' sprintf('%02d',f) '.xml']));
+                delete([ExpeInfo.PreProcessingInfo.FolderForConcatenation_Ephys{f} filesep 'amplifier.xml']);
             end
             cd(FinalFolder)
             
