@@ -4,7 +4,6 @@ clear all
 load('ExpeInfo.mat')
 BaseFileName = ['M' num2str(ExpeInfo.nmouse) '_' ExpeInfo.date '_' ExpeInfo.SessionType];
 FinalFolder = cd;
-is_OpenEphys = true;
 
 %% Preallocate arrays
 TimeBeginRec_Allfiles = nan(length(ExpeInfo.PreProcessingInfo.FolderForConcatenation_Ephys), 3);
@@ -149,12 +148,13 @@ switch ExpeInfo.PreProcessingInfo.IsThereEphys
             movefile( [FinalFolder filesep BaseFileName '.evt.cat'],[FinalFolder filesep BaseFileName '.cat.evt'])
         end
         
+        SetCurrentSession('same');
+        tpsCatEvt = MakeData_CatEvents(FinalFolder);
+        MakeData_RealTime(FinalFolder)
+        
         if ExpeInfo.PreProcessingInfo.NumAccelero>0
             MakeData_Accelero(FinalFolder)
         end
-        
-        tpsCatEvt = MakeData_CatEvents(FinalFolder);
-        MakeData_RealTime(FinalFolder)
         
         %% Make final TTLInfo
         % Duration files
