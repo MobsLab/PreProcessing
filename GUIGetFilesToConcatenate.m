@@ -148,7 +148,11 @@ TempData = guidata(hObject);
 % get the folder with ephys
 switch TempData.ExpeInfo.PreProcessingInfo.IsThereEphys
     case 'Yes'
-        directoryname = uigetdir(cd, 'Click on the ephys folder');
+        if strcmp(TempData.ExpeInfo.PreProcessingInfo.TypeOfSystem, 'Intan')
+            directoryname = uigetdir(cd, 'Click on the ephys folder with .dat file');
+        elseif strcmp(TempData.ExpeInfo.PreProcessingInfo.TypeOfSystem, 'OpenEphys')
+            directoryname = uigetdir(cd, 'Ephys folder with .dat file. Keep folders structure original');
+        end
     case 'No'
         directoryname = 'NoEphys';
 end
