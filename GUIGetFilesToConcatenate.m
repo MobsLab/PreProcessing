@@ -59,9 +59,15 @@ load('ExpeInfo.mat')
 
 ExpeInfo.PreProcessingInfo.IsThereEphys = questdlg('Is there ephys?','FileTypes','Yes','No','Yes');
 if strcmp(ExpeInfo.PreProcessingInfo.IsThereEphys, 'Yes')
-    ExpeInfo.PreProcessingInfo.TypeOfSystem = questdlg('Which software did you use?','FileTypes','Intan','OpenEphys','Intan');
+    ExpeInfo.PreProcessingInfo.TypeOfSystem = questdlg('Which software did you use?','FileTypes','Intan','OpenEphys or mixed','Intan');
 end
 ExpeInfo.PreProcessingInfo.IsThereBehav = questdlg('Is there behaviour?','FileTypes','Yes','No','Yes');
+ExpeInfo.PreProcessingInfo.CleanSpikes = questdlg('Do you want to clean spike files (from stimulations and high-amplitude noise)?',...
+    'FileTypes','Yes','No','No');
+if strcmp(ExpeInfo.PreProcessingInfo.CleanSpikes, 'Yes')
+    temp = inputdlg('Stimulation duration', 'How long is your stimulation (in sec)', [1 50]);
+    ExpeInfo.PreProcessingInfo.StimDur = str2double(temp{1});
+end
 save('ExpeInfo.mat','ExpeInfo')
 
 NumFilesToConcatenate = inputdlg('Number of folders to concatenate');
@@ -98,11 +104,11 @@ for k = 1 : NumFilesToConcatenate
         'callback', {@RefDone,k});
     
     if strcmp(ExpeInfo.PreProcessingInfo.TypeOfSystem, 'Intan')
-        handles.(['GetFileLocation',num2str(k)])= uicontrol(handles.figure1,'style','radiobutton',...
+        handles.(['IsMergeDone',num2str(k)])= uicontrol(handles.figure1,'style','radiobutton',...
             'units','normalized','position',[0.92 0.9-(0.9/(NumFilesToConcatenate+1))*k+0.02 0.08 0.02],'String','Merge done',...
             'callback', {@MergeDone,k});
-    elseif strcmp(ExpeInfo.PreProcessingInfo.TypeOfSystem, 'OpenEphys')
-        handles.(['GetFileLocation',num2str(k)])= uicontrol(handles.figure1,'style','radiobutton',...
+    elseif strcmp(ExpeInfo.PreProcessingInfo.TypeOfSystem, 'OpenEphys or mixed')
+        handles.(['WhichSystemWasUsed',num2str(k)])= uicontrol(handles.figure1,'style','radiobutton',...
             'units','normalized','position',[0.92 0.9-(0.9/(NumFilesToConcatenate+1))*k+0.02 0.08 0.02],'String','Intan recorded',...
             'callback', {@IntanRecorded,k});
     end
@@ -110,7 +116,7 @@ for k = 1 : NumFilesToConcatenate
     if strcmp(ExpeInfo.PreProcessingInfo.TypeOfSystem, 'Intan')
         ExpeInfo.PreProcessingInfo.MergeDone{k} = 0;
     else
-        ExpeInfo.PreProcessingInfo.MergeDone{k} = 1;
+        ExpeInfo.PreProcessingInfo.MergeDone{k} = 0;
         ExpeInfo.PreProcessingInfo.IntanRecorded{k} = 0;
     end
     ExpeInfo.PreProcessingInfo.RefDone{k} = 0;
@@ -150,7 +156,7 @@ switch TempData.ExpeInfo.PreProcessingInfo.IsThereEphys
     case 'Yes'
         if strcmp(TempData.ExpeInfo.PreProcessingInfo.TypeOfSystem, 'Intan')
             directoryname = uigetdir(cd, 'Click on the ephys folder with .dat file');
-        elseif strcmp(TempData.ExpeInfo.PreProcessingInfo.TypeOfSystem, 'OpenEphys')
+        elseif strcmp(TempData.ExpeInfo.PreProcessingInfo.TypeOfSystem, 'OpenEphys or mixed')
             directoryname = uigetdir(cd, 'Ephys folder with .dat file. Keep folders structure original');
         end
     case 'No'

@@ -81,51 +81,11 @@ switch ExpeInfo.PreProcessingInfo.IsThereEphys
                 disp(['file is ref subtracted - merging...'])
                 % Create the xml
                 WriteExpeInfoToXml(ExpeInfo)
-                 disp('file is unpreprocessed - subtracting ref...')
-                % Create the xml
-                WriteExpeInfoToXml(ExpeInfo)
                 
-                
-                % subtract the reference
-                RefChannel = ExpeInfo.ChannelToAnalyse.Ref;
-                % do subtraction on all the wideband channels
-                ChanToSub = [0 : ExpeInfo.PreProcessingInfo.NumWideband-1];
-                ChanToSub(ChanToSub==RefChannel) = [];
-                % special case for breathing
-                if isfield(ExpeInfo.ChannelToAnalyse,'Respi')
-                    ChanToSub(ChanToSub==ExpeInfo.ChannelToAnalyse.Respi) = [];
-                end
-                ChanToSave = 0 :ExpeInfo.PreProcessingInfo.NumWideband-1;
-                ChanToSave(ChanToSub+1) = [];
-                % Do the subtraction
-                RefSubtraction_multi('amplifier.dat',ExpeInfo.PreProcessingInfo.NumWideband,1,['M' num2str(ExpeInfo.nmouse)],ChanToSub,RefChannel,ChanToSave);
                 
                 disp('file is ref subtracted - merging...')
                 % Merge
                 movefile(['amplifier_M' num2str(ExpeInfo.nmouse) '.dat'], 'amplifier-wideband.dat');
-                if ExpeInfo.PreProcessingInfo.NumAccelero>0
-                    movefile('auxiliary.dat', 'amplifier-accelero.dat');
-                end
-                if ExpeInfo.PreProcessingInfo.NumDigChan>0
-                    movefile('digitalin.dat', 'amplifier-digin.dat');
-                end
-                if ExpeInfo.PreProcessingInfo.NumAnalog>0
-                    movefile('analogin.dat', 'amplifier-analogin.dat');
-                end
-                system('ndm_mergedat amplifier')
-                
-                disp('file is merged and ref subtracted - copying ...')
-                % copy the file
-                copyfile(fullfile(ExpeInfo.PreProcessingInfo.FolderForConcatenation_Ephys{f}, 'amplifier.dat'),...
-                    fullfile(FinalFolder, [BaseFileName '-' sprintf('%02d',f) '.dat']));
-                copyfile(fullfile(ExpeInfo.PreProcessingInfo.FolderForConcatenation_Ephys{f}, 'amplifier.xml'),...
-                    fullfile(FinalFolder, [BaseFileName '-' sprintf('%02d',f) '.xml']));
-                % Merge
-                if exist(['amplifier_M' num2str(ExpeInfo.nmouse) '.dat'], 'file') == 2
-                    movefile(['amplifier_M' num2str(ExpeInfo.nmouse) '.dat'], 'amplifier-wideband.dat');
-                else
-                    system('mv amplifier.dat amplifier-wideband.dat')
-                end
                 if ExpeInfo.PreProcessingInfo.NumAccelero>0
                     movefile('auxiliary.dat', 'amplifier-accelero.dat');
                 end
@@ -323,6 +283,24 @@ switch ExpeInfo.PreProcessingInfo.IsThereEphys
                 % Do the preprcessing steps
                 system(['ndm_hipass ' BaseFileName '_SpikeRef'])
                 system(['ndm_extractspikes ' BaseFileName '_SpikeRef'])
+                
+                if strcmp(ExpeInfo.PreProcessingInfo.CleanSpikes, 'Yes')
+                    disp('I will clean bad spikes...');
+                    
+                    if exist('UnfilteredChans', 'dir') ~= 7 || isempty(dir([FinalFolder filesep 'UnfilteredChans/*.mat']))
+                        MakeData_Detection(FinalFolder, ExpeInfo.ChannelToAnalyse.Ref);
+                    end
+                    
+                    % Get spikes without artefacts
+                    files = dir([FinalFolder filesep 'UnfilteredChans/*.mat']);
+                    CleanEpoch = DefineCleanSpikesEpochs([files(1).folder filesep files(1).name], FinalFolder,...
+                        ExpeInfo.PreProcessingInfo.StimDur);
+                    
+                    % Remove spikes
+                    RemoveArtefactualSpikes(FinalFolder, CleanEpoch);
+                        
+                end
+                
                 system(['ndm_pca ' BaseFileName '_SpikeRef'])
                 
             else
@@ -390,6 +368,24 @@ switch ExpeInfo.PreProcessingInfo.IsThereEphys
 
                 system(['ndm_hipass ' BaseFileName])
                 system(['ndm_extractspikes ' BaseFileName])
+                
+                if strcmp(ExpeInfo.PreProcessingInfo.CleanSpikes, 'Yes')
+                    disp('I will clean bad spikes...');
+                    
+                    if exist('UnfilteredChans', 'dir') ~= 7 || isempty(dir([FinalFolder filesep 'UnfilteredChans/*.mat']))
+                        MakeData_Detection(FinalFolder, ExpeInfo.ChannelToAnalyse.Ref);
+                    end
+                    
+                    % Get spikes without artefacts
+                    files = dir([FinalFolder filesep 'UnfilteredChans/*.mat']);
+                    CleanEpoch = DefineCleanSpikesEpochs([files(1).folder filesep files(1).name], FinalFolder,...
+                        ExpeInfo.PreProcessingInfo.StimDur);
+                    
+                    % Remove spikes
+                    RemoveArtefactualSpikes(FinalFolder, CleanEpoch);
+                        
+                end
+          
                 system(['ndm_pca ' BaseFileName])
             end
             

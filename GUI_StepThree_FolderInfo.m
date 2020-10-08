@@ -112,7 +112,7 @@ save('ExpeInfo.mat','ExpeInfo')
 delete(TempData.figure1)
 if strcmp(ExpeInfo.PreProcessingInfo.TypeOfSystem, 'Intan')
     LastStepDoPreProcessing_SB
-elseif strcmp(ExpeInfo.PreProcessingInfo.TypeOfSystem, 'OpenEphys')
+elseif strcmp(ExpeInfo.PreProcessingInfo.TypeOfSystem, 'OpenEphys or mixed')
     LastStep_PreProcessing_OE_DB
 end
 

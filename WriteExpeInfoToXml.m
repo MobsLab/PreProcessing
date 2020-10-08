@@ -2,7 +2,7 @@ function WriteExpeInfoToXml(ExpeInfo)
 
 %% read the model file to be completed
 dr = dropbox;
-copyfile([dr '/Kteam/PrgMatlab/Processing/NomenclatureCodes/ModelXmlPreProcessing.xml'],'amplifier.xml')
+copyfile([dr '/Kteam/PrgMatlab/PreProcessing/NomenclatureCodes/ModelXmlPreProcessing.xml'],'amplifier.xml')
 XmlStructure = xml2struct_SB('amplifier.xml');
 
 %% General Information
@@ -150,12 +150,14 @@ for k = 1:length(XmlStructure.parameters.programs.program{ProgramNum}.parameters
             MergeString = [MergeString ' ' num2str(ExpeInfo.PreProcessingInfo.NumAnalog)];
         end
         if ExpeInfo.PreProcessingInfo.NumDigChan>0
-            MergeString = [MergeString ' ' num2str(ExpeInfo.PreProcessingInfo.NumDigChan)];
+            if strcmp(ExpeInfo.PreProcessingInfo.TypeOfSystem, 'Intan')
+                MergeString = [MergeString ' ' num2str(ExpeInfo.PreProcessingInfo.NumDigChan)];
+            end
         end
         
         XmlStructure.parameters.programs.program{ProgramNum}.parameters.parameter{k}.value.Text = MergeString;
     elseif strcmp(XmlStructure.parameters.programs.program{ProgramNum}.parameters.parameter{k}.name.Text,'suffixes')
-                   %w wideband - accelero - analog - digital
+        %w wideband - accelero - analog - digital
         MergeStringSuff = 'wideband';
         if ExpeInfo.PreProcessingInfo.NumAccelero>0
             MergeStringSuff = [MergeStringSuff ' accelero'];
@@ -164,7 +166,9 @@ for k = 1:length(XmlStructure.parameters.programs.program{ProgramNum}.parameters
             MergeStringSuff = [MergeStringSuff ' analogin'];
         end
         if ExpeInfo.PreProcessingInfo.NumDigChan>0
-            MergeStringSuff = [MergeStringSuff ' digin'];
+            if strcmp(ExpeInfo.PreProcessingInfo.TypeOfSystem, 'Intan')
+                MergeStringSuff = [MergeStringSuff ' digin'];
+            end
         end
         
         XmlStructure.parameters.programs.program{ProgramNum}.parameters.parameter{k}.value.Text = MergeStringSuff;
