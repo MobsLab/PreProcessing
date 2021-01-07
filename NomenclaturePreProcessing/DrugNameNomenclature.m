@@ -10,6 +10,7 @@ DrugName = ...
     'MTZL',... % methimazole
     'MDZ',... % midazolam
     'FLX',... % fluoxetine
+    'CHRONIC FLX',... % chronic fluoxetine 
     'LPS',... % lipopolysaccharide
 'Atropine',...% muscarinic antagonist
     'CNO',...  % clozapine n oxide (for dreadd)

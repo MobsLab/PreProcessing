@@ -65,7 +65,7 @@ ExpeInfo.PreProcessingInfo.IsThereBehav = questdlg('Is there behaviour?','FileTy
 ExpeInfo.PreProcessingInfo.CleanSpikes = questdlg('Do you want to clean spike files (from stimulations and high-amplitude noise)?',...
     'FileTypes','Yes','No','No');
 if strcmp(ExpeInfo.PreProcessingInfo.CleanSpikes, 'Yes')
-    temp = inputdlg('Stimulation duration', 'How long is your stimulation (in sec)', [1 50]);
+    temp = inputdlg('Stimulation duration (in sec)', 'How long is your stimulation (in sec)', [1 50]);
     ExpeInfo.PreProcessingInfo.StimDur = str2double(temp{1});
 end
 save('ExpeInfo.mat','ExpeInfo')
