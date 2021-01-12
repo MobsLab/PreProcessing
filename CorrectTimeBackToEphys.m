@@ -62,6 +62,10 @@ if isfield(behavResources, 'LinearDist')
     tt = Range(behavResources.LinearDist) - 1e4 + TTLInfo_sess.StartSession;
     behavResources.LinearDist = tsd(tt, Data(behavResources.LinearDist)); clear tt
 end
+if isfield(behavResources, 'CleanLinearDist')
+    tt = Range(behavResources.CleanLinearDist) - 1e4 + TTLInfo_sess.StartSession;
+    behavResources.CleanLinearDist = tsd(tt, Data(behavResources.CleanLinearDist)); clear tt
+end
 if isfield(behavResources, 'CleanZoneEpoch')
     for izone = 1:length(behavResources.CleanZoneEpoch)
         st = Start(behavResources.CleanZoneEpoch{izone}) - 1e4 + TTLInfo_sess.StartSession;

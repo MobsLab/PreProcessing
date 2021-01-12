@@ -756,6 +756,111 @@ for i = 1:length(FilesList)
 end
 clear LinearDistTimeTemp LinearDistDataTemp
 
+% CleanAlignedXtsd
+for i=1:length(FilesList) % tsd of X coordinates
+    if isfield(a{i},'CleanAlignedXtsd')
+        XtsdTimeTemp{i} = Range(a{i}.CleanAlignedXtsd);
+        XtsdDataTemp{i} = Data(a{i}.CleanAlignedXtsd);
+    else
+        XtsdTimeTemp{i} = [];
+    end
+end
+for i=1:(length(FilesList)-1)
+    if ~isempty(XtsdTimeTemp{i+1})
+        XtsdTimeTemp{i+1} = XtsdTimeTemp{i+1}+sum(duration(1:i))*1e4;
+    else
+        XtsdTimeTemp{i+1} = [];
+    end
+end
+for i = 1:length(FilesList)
+    if ~isempty(XtsdTimeTemp{i})
+        behavResources(i).CleanAlignedXtsd = tsd(XtsdTimeTemp{i}, XtsdDataTemp{i});
+    else
+        behavResources(i).CleanAlignedXtsd = [];
+    end
+end
+clear XtsdTimeTemp XtsdDataTemp
+
+% CleanAlignedYtsd
+for i=1:length(FilesList) % tsd of Y coordinates
+    if isfield(a{i},'CleanAlignedYtsd')
+        YtsdTimeTemp{i} = Range(a{i}.CleanAlignedYtsd);
+        YtsdDataTemp{i} = Data(a{i}.CleanAlignedYtsd);
+    else
+        YtsdTimeTemp{i} = [];
+    end
+end
+for i=1:(length(FilesList)-1)
+    if ~isempty(YtsdTimeTemp{i+1})
+        YtsdTimeTemp{i+1} = YtsdTimeTemp{i+1}+sum(duration(1:i))*1e4;
+    else
+        YtsdTimeTemp{i+1} = [];
+    end
+end
+for i = 1:length(FilesList)
+    if ~isempty(YtsdTimeTemp{i})
+        behavResources(i).CleanAlignedYtsd = tsd(YtsdTimeTemp{i}, YtsdDataTemp{i});
+    else
+        behavResources(i).CleanAlignedYtsd = [];
+    end
+end
+clear YtsdTimeTemp YtsdDataTemp
+
+% CleanZoneEpochAligned
+for i=1:length(FilesList) % Epochs when the animals was situated in the Zone
+    if isfield(a{i}, 'CleanZoneEpochAligned')
+        for k = 1:length(a{i}.CleanZoneEpochAligned)
+            ZoneEpochTempStart{i}{k} = Start(a{i}.CleanZoneEpochAligned{k});
+            ZoneEpochTempEnd{i}{k} = End(a{i}.CleanZoneEpochAligned{k});
+        end
+    else
+        ZoneEpochTempStart{i} = [];
+    end
+end
+for i=1:(length(FilesList)-1)
+    if ~isempty (ZoneEpochTempStart{i+1})
+        for k = 1:length(ZoneEpochTempStart{i+1})
+            ZoneEpochTempStart{i+1}{k} = ZoneEpochTempStart{i+1}{k} +sum(duration(1:i))*1e4;
+            ZoneEpochTempEnd{i+1}{k} = ZoneEpochTempEnd{i+1}{k} +sum(duration(1:i))*1e4;
+        end
+    end
+end
+for i=1:length(FilesList)
+    if ~isempty (ZoneEpochTempStart{i})
+        for k = 1:length(a{i}.CleanZoneEpochAligned)
+            behavResources(i).CleanZoneEpochAligned{k} = intervalSet(ZoneEpochTempStart{i}{k}, ZoneEpochTempEnd{i}{k});
+        end
+    else
+        behavResources(i).CleanZoneEpochAligned = [];
+    end
+end
+clear ZoneEpochTempStart ZoneEpochTempEnd ZoneEpochStart ZoneEpochEnd
+
+% CleanLinearDist
+for i=1:length(FilesList) % tsd of X coordinates
+    if isfield(a{i},'CleanLinearDist')
+        LinearDistTimeTemp{i} = Range(a{i}.CleanLinearDist);
+        LinearDistDataTemp{i} = Data(a{i}.CleanLinearDist);
+    else
+        LinearDistTimeTemp{i} = [];
+    end
+end
+for i=1:(length(FilesList)-1)
+    if ~isempty(LinearDistTimeTemp{i+1})
+        LinearDistTimeTemp{i+1} = LinearDistTimeTemp{i+1}+sum(duration(1:i))*1e4;
+    else
+        LinearDistTimeTemp{i+1} = [];
+    end
+end
+for i = 1:length(FilesList)
+    if ~isempty(LinearDistTimeTemp{i})
+        behavResources(i).CleanLinearDist = tsd(LinearDistTimeTemp{i}, LinearDistDataTemp{i});
+    else
+        behavResources(i).CleanLinearDist = [];
+    end
+end
+clear LinearDistTimeTemp LinearDistDataTemp
+
 %% Concatenated tsd and intervalSet variables
 
 %%% OBLIGATORY
@@ -1345,7 +1450,7 @@ if exist('DoZones','var')
     end
 end
 
-% Concatenate Xtsd (type single tsd)
+% Concatenate AlignedXtsd (type single tsd)
 for i=1:length(FilesList)
     if isfield(a{i},'AlignedXtsd')
         XtsdTimeTemp{i} = Range(a{i}.AlignedXtsd);
@@ -1368,7 +1473,7 @@ AlignedXtsd = tsd(XtsdTime, XtsdData);
 clear XtsdTimeTemp XtsdDataTemp XtsdTime XtsdData
 
 
-% Concatenate Ytsd (type single tsd)
+% Concatenate AlignedYtsd (type single tsd)
 for i=1:length(FilesList)
     if isfield(a{i},'AlignedYtsd')
         YtsdTimeTemp{i} = Range(a{i}.AlignedYtsd);
@@ -1468,6 +1573,128 @@ end
 LinearDist = tsd(LinearDistTime, LinearDistData);
 clear LinearDistTimeTemp LinearDistDataTemp LinearDistTime LinearDistData
 
+% Concatenate CleanAlignedXtsd (type single tsd)
+for i=1:length(FilesList)
+    if isfield(a{i},'CleanAlignedXtsd')
+        XtsdTimeTemp{i} = Range(a{i}.CleanAlignedXtsd);
+        XtsdDataTemp{i} = Data(a{i}.CleanAlignedXtsd);
+    else
+        XtsdTimeTemp{i} = Range(a{i}.Xtsd);
+        XtsdDataTemp{i} = nan(length(XtsdTimeTemp{i}),1);
+    end
+end
+for i=1:(length(FilesList)-1)
+    XtsdTimeTemp{i+1} = XtsdTimeTemp{i+1}+sum(duration(1:i))*1e4;
+end
+XtsdTime = XtsdTimeTemp{1};
+XtsdData = XtsdDataTemp{1};
+for i = 2:length(FilesList)
+    XtsdTime = [XtsdTime; XtsdTimeTemp{i}];
+    XtsdData = [XtsdData; XtsdDataTemp{i}];
+end
+CleanAlignedXtsd = tsd(XtsdTime, XtsdData);
+clear XtsdTimeTemp XtsdDataTemp XtsdTime XtsdData
+
+
+% Concatenate CleanAlignedYtsd (type single tsd)
+for i=1:length(FilesList)
+    if isfield(a{i},'CleanAlignedYtsd')
+        YtsdTimeTemp{i} = Range(a{i}.CleanAlignedYtsd);
+        YtsdDataTemp{i} = Data(a{i}.CleanAlignedYtsd);
+    else
+        YtsdTimeTemp{i} = Range(a{i}.Xtsd);
+        YtsdDataTemp{i} = nan(length(YtsdTimeTemp{i}),1);
+    end
+end
+for i=1:(length(FilesList)-1)
+    YtsdTimeTemp{i+1} = YtsdTimeTemp{i+1}+sum(duration(1:i))*1e4;
+end
+YtsdTime = YtsdTimeTemp{1};
+YtsdData = YtsdDataTemp{1};
+for i = 2:length(FilesList)
+    YtsdTime = [YtsdTime; YtsdTimeTemp{i}];
+    YtsdData = [YtsdData; YtsdDataTemp{i}];
+end
+CleanAlignedYtsd = tsd(YtsdTime, YtsdData);
+clear YtsdTimeTemp YtsdDataTemp YtsdTime YtsdData
+
+if exist('DoZones','var')
+    if DoZones
+        % Concatenate CleanZoneEpochAligned (type single tsa)
+        for i=1:length(FilesList)
+            if isfield(a{i}, 'CleanZoneEpochAligned')
+                if isfield(a{i}, 'ZoneLabels')
+                    ZoneEpochTempStart{i} = cell(1,length(ZoneNames));
+                    ZoneEpochTempEnd{i} = cell(1,length(ZoneNames));
+                    for k = 1:length(a{i}.CleanZoneEpochAligned)
+                        idx_Zone = find(strcmp(a{i}.ZoneLabels{k}, ZoneNames));
+                        ZoneEpochTempStart{i}{idx_Zone} = Start(a{i}.CleanZoneEpochAligned{k});
+                        ZoneEpochTempEnd{i}{idx_Zone} = End(a{i}.CleanZoneEpochAligned{k});
+                    end
+                end
+            else
+                ZoneEpochTempStart{i} = [];
+                ZoneEpochTempEnd{i} = [];
+            end
+        end
+        for i=1:(length(FilesList)-1)
+            if ~isempty (ZoneEpochTempStart{i+1})
+                for k = 1:length(ZoneEpochTempStart{i+1})
+                    ZoneEpochTempStart{i+1}{k} = ZoneEpochTempStart{i+1}{k} +sum(duration(1:i))*1e4;
+                    ZoneEpochTempEnd{i+1}{k} = ZoneEpochTempEnd{i+1}{k} +sum(duration(1:i))*1e4;
+                end
+            end
+        end
+        for k=1:length(ZoneNames)
+            if ~isempty(ZoneEpochTempStart{1})
+                if ~isempty(ZoneEpochTempStart{1}{k})
+                    ZoneEpochStart{k} = ZoneEpochTempStart{1}{k};
+                    ZoneEpochEnd{k} = ZoneEpochTempEnd{1}{k};
+                else
+                    ZoneEpochStart{k} = [];
+                    ZoneEpochEnd{k} = [];
+                end
+            else
+                ZoneEpochStart{k} = [];
+                ZoneEpochEnd{k} = [];
+            end
+        end
+        for i=2:length(FilesList)
+            for k = 1:length(ZoneNames)
+                if ~isempty(ZoneEpochTempStart{i})
+                    ZoneEpochStart{k} = [ZoneEpochStart{k}; ZoneEpochTempStart{i}{k}];
+                    ZoneEpochEnd{k} = [ZoneEpochEnd{k}; ZoneEpochTempEnd{i}{k}];
+                end
+            end
+        end
+        for i=1:length(ZoneNames)
+            CleanZoneEpochAligned.(ZoneNames{i}) = intervalSet(ZoneEpochStart{i}, ZoneEpochEnd{i});
+        end
+        clear idx_Zone ZoneEpochTempStart ZoneEpochTempEnd ZoneEpochStart ZoneEpochEnd
+    end
+end
+
+% Concatenate LinearDist (type single tsd)
+for i=1:length(FilesList)
+    if isfield(a{i},'CleanLinearDist')
+        LinearDistTimeTemp{i} = Range(a{i}.CleanLinearDist);
+        LinearDistDataTemp{i} = Data(a{i}.CleanLinearDist);
+    else
+        LinearDistTimeTemp{i} = Range(a{i}.Xtsd);
+        LinearDistDataTemp{i} = nan(length(LinearDistTimeTemp{i}),1);
+    end
+end
+for i=1:(length(FilesList)-1)
+    LinearDistTimeTemp{i+1} = LinearDistTimeTemp{i+1}+sum(duration(1:i))*1e4;
+end
+LinearDistTime = LinearDistTimeTemp{1};
+LinearDistData = LinearDistDataTemp{1};
+for i = 2:length(FilesList)
+    LinearDistTime = [LinearDistTime; LinearDistTimeTemp{i}];
+    LinearDistData = [LinearDistData; LinearDistDataTemp{i}];
+end
+CleanLinearDist = tsd(LinearDistTime, LinearDistData);
+clear LinearDistTimeTemp LinearDistDataTemp LinearDistTime LinearDistData
 
 
 %% Clear temporary variables
@@ -1530,6 +1757,18 @@ else
     end
     if exist('ZoneEpochAligned', 'var')
         save([pathtosave 'behavResources.mat'], 'ZoneEpochAligned', '-append');
+    end
+    if exist('CleanAlignedXtsd', 'var')
+        save([pathtosave 'behavResources.mat'], 'CleanAlignedXtsd', '-append');
+    end
+    if exist('CleanAlignedYtsd', 'var')
+        save([pathtosave 'behavResources.mat'], 'CleanAlignedYtsd', '-append');
+    end
+    if exist('CleanLinearDist', 'var')
+        save([pathtosave 'behavResources.mat'], 'CleanLinearDist', '-append');
+    end
+    if exist('CleanZoneEpochAligned', 'var')
+        save([pathtosave 'behavResources.mat'], 'CleanZoneEpochAligned', '-append');
     end
 end
 

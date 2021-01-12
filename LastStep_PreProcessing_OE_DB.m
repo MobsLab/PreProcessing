@@ -48,7 +48,7 @@ switch ExpeInfo.PreProcessingInfo.IsThereEphys
                 TTLInfo_sess{f} = MakeData_TTLInfo_OpenEphys([ExpeInfo.PreProcessingInfo.FolderForConcatenation_Ephys{f}(1:out_ind-1) ...
                     'events/Rhythm_FPGA-100.0_TTL_1.mat'],StartFile.folder,ExpeInfo.PreProcessingInfo.FolderForConcatenation_Ephys{f}(1:out_ind-1),...
                     ExpeInfo);
-                
+
                 %% here is the place where we check if the ephys is the right length comapred to the behav resources - to do
                 
                 %% copy ephys files that are ref subtracted and merged
