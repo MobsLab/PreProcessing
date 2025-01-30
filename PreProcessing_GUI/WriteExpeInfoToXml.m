@@ -1,8 +1,8 @@
 function WriteExpeInfoToXml(ExpeInfo)
 
-%% read the model file to be completed
+%% read the model file to be completed %
 dr = dropbox;
-copyfile([dr '/Kteam/PrgMatlab/PreProcessing/NomenclatureCodes/ModelXmlPreProcessing.xml'],'amplifier.xml')
+copyfile([dr '/Kteam/PrgMatlab/Processing/NomenclatureCodes/ModelXmlPreProcessing.xml'],'amplifier.xml')
 XmlStructure = xml2struct_SB('amplifier.xml');
 
 %% General Information
@@ -52,14 +52,6 @@ if isfield(ExpeInfo,'DrugInfo')
             temp = (ExpeInfo.DrugInfo.(AllFields{ff}));
         end
         TextForDescription = [TextForDescription,newline,AllFields{ff},': ',temp];
-    end
-end
-
-%% Added 20/01/2025 - list all channels
-TextForDescription = [TextForDescription,newline];
-for ii = 1 : length(ExpeInfo.InfoLFP.structure)
-    if strcmp(ExpeInfo.InfoLFP.structure{ii},'Nthg') ==0
-        TextForDescription = [TextForDescription,num2str(ExpeInfo.InfoLFP.channel(ii)), ' : ', ExpeInfo.InfoLFP.structure{ii},newline];
     end
 end
 
@@ -158,14 +150,12 @@ for k = 1:length(XmlStructure.parameters.programs.program{ProgramNum}.parameters
             MergeString = [MergeString ' ' num2str(ExpeInfo.PreProcessingInfo.NumAnalog)];
         end
         if ExpeInfo.PreProcessingInfo.NumDigChan>0
-            if strcmp(ExpeInfo.PreProcessingInfo.TypeOfSystem, 'Intan')
-                MergeString = [MergeString ' ' num2str(ExpeInfo.PreProcessingInfo.NumDigChan)];
-            end
+            MergeString = [MergeString ' ' num2str(ExpeInfo.PreProcessingInfo.NumDigChan)];
         end
         
         XmlStructure.parameters.programs.program{ProgramNum}.parameters.parameter{k}.value.Text = MergeString;
     elseif strcmp(XmlStructure.parameters.programs.program{ProgramNum}.parameters.parameter{k}.name.Text,'suffixes')
-        %w wideband - accelero - analog - digital
+                   %w wideband - accelero - analog - digital
         MergeStringSuff = 'wideband';
         if ExpeInfo.PreProcessingInfo.NumAccelero>0
             MergeStringSuff = [MergeStringSuff ' accelero'];
@@ -174,9 +164,7 @@ for k = 1:length(XmlStructure.parameters.programs.program{ProgramNum}.parameters
             MergeStringSuff = [MergeStringSuff ' analogin'];
         end
         if ExpeInfo.PreProcessingInfo.NumDigChan>0
-            if strcmp(ExpeInfo.PreProcessingInfo.TypeOfSystem, 'Intan')
-                MergeStringSuff = [MergeStringSuff ' digin'];
-            end
+            MergeStringSuff = [MergeStringSuff ' digin'];
         end
         
         XmlStructure.parameters.programs.program{ProgramNum}.parameters.parameter{k}.value.Text = MergeStringSuff;

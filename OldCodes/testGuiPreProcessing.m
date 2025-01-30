@@ -1,35 +1,35 @@
-function varargout = GUI_StepOne_ExperimentInfo(varargin)
-% GUI_STEPONE_EXPERIMENTINFO MATLAB code for GUI_StepOne_ExperimentInfo.fig
-%      GUI_STEPONE_EXPERIMENTINFO, by itself, creates a new GUI_STEPONE_EXPERIMENTINFO or raises the existing
+function varargout = testGuiPreProcessing(varargin)
+% TESTGUIPREPROCESSING MATLAB code for testGuiPreProcessing.fig
+%      TESTGUIPREPROCESSING, by itself, creates a new TESTGUIPREPROCESSING or raises the existing
 %      singleton*.
 %
-%      H = GUI_STEPONE_EXPERIMENTINFO returns the handle to a new GUI_STEPONE_EXPERIMENTINFO or the handle to
+%      H = TESTGUIPREPROCESSING returns the handle to a new TESTGUIPREPROCESSING or the handle to
 %      the existing singleton*.
 %
-%      GUI_STEPONE_EXPERIMENTINFO('CALLBACK',hObject,eventData,handles,...) calls the local
-%      function named CALLBACK in GUI_STEPONE_EXPERIMENTINFO.M with the given input arguments.
+%      TESTGUIPREPROCESSING('CALLBACK',hObject,eventData,handles,...) calls the local
+%      function named CALLBACK in TESTGUIPREPROCESSING.M with the given input arguments.
 %
-%      GUI_STEPONE_EXPERIMENTINFO('Property','Value',...) creates a new GUI_STEPONE_EXPERIMENTINFO or raises the
+%      TESTGUIPREPROCESSING('Property','Value',...) creates a new TESTGUIPREPROCESSING or raises the
 %      existing singleton*.  Starting from the left, property value pairs are
-%      applied to the GUI before GUI_StepOne_ExperimentInfo_OpeningFcn gets called.  An
+%      applied to the GUI before testGuiPreProcessing_OpeningFcn gets called.  An
 %      unrecognized property name or invalid value makes property application
-%      stop.  All inputs are passed to GUI_StepOne_ExperimentInfo_OpeningFcn via varargin.
+%      stop.  All inputs are passed to testGuiPreProcessing_OpeningFcn via varargin.
 %
 %      *See GUI Options on GUIDE's Tools menu.  Choose "GUI allows only one
 %      instance to run (singleton)".
 %
 % See also: GUIDE, GUIDATA, GUIHANDLES
 
-% Edit the above text to modify the response to help GUI_StepOne_ExperimentInfo
+% Edit the above text to modify the response to help testGuiPreProcessing
 
-% Last Modified by GUIDE v2.5 18-Dec-2018 10:51:41
+% Last Modified by GUIDE v2.5 17-Dec-2018 17:29:41
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
 gui_State = struct('gui_Name',       mfilename, ...
     'gui_Singleton',  gui_Singleton, ...
-    'gui_OpeningFcn', @GUI_StepOne_ExperimentInfo_OpeningFcn, ...
-    'gui_OutputFcn',  @GUI_StepOne_ExperimentInfo_OutputFcn, ...
+    'gui_OpeningFcn', @testGuiPreProcessing_OpeningFcn, ...
+    'gui_OutputFcn',  @testGuiPreProcessing_OutputFcn, ...
     'gui_LayoutFcn',  [] , ...
     'gui_Callback',   []);
 
@@ -40,22 +40,22 @@ end
 
 if nargout
     [varargout{1:nargout}] = gui_mainfcn(gui_State, varargin{:});
-else  
+else
     gui_mainfcn(gui_State, varargin{:});
 end
 
 % End initialization code - DO NOT EDIT
 
 
-% --- Executes just before GUI_StepOne_ExperimentInfo is made visible.
-function GUI_StepOne_ExperimentInfo_OpeningFcn(hObject, eventdata, handles, varargin)
+% --- Executes just before testGuiPreProcessing is made visible.
+function testGuiPreProcessing_OpeningFcn(hObject, eventdata, handles, varargin)
 % This function has no output args, see OutputFcn.
 % hObject    handle to figure
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-% varargin   command line arguments to GUI_StepOne_ExperimentInfo (see VARARGIN)
+% varargin   command line arguments to testGuiPreProcessing (see VARARGIN)
 
-% Choose default command line output for GUI_StepOne_ExperimentInfo
+% Choose default command line output for testGuiPreProcessing
 handles.output = hObject;
 
 % set buttons to on and off
@@ -68,7 +68,6 @@ set(handles.SessionName_Edit,'Enable','Off')
 set(handles.RecordingRoomMenu,'Enable','Off')
 set(handles.EnvironmentType,'Enable','Off')
 set(handles.CameraType,'Enable','Off')
-set(handles.NextStepButton,'enable','Off')
 
 set(findall(handles.Optogenetics_Panel,'-property','enable'),'enable','off')
 set(findall(handles.ElectricStim_Panel,'-property','enable'),'enable','off')
@@ -92,7 +91,7 @@ handles.minuteDrug2 = [];
 handles.TrackStimSession = [];
 
 % initialize ExpeInfo if it does not already exist
-if isfile('ExpeInfo.mat')==1
+if exist('ExpeInfo.mat')==2
     load('ExpeInfo.mat')
     handles.ExpeInfo = ExpeInfo;
     handles = FillInSlotsWithExpeInfo(handles);
@@ -114,12 +113,12 @@ end
 guidata(hObject, handles);
 
 
-% UIWAIT makes GUI_StepOne_ExperimentInfo wait for user response (see UIRESUME)
+% UIWAIT makes testGuiPreProcessing wait for user response (see UIRESUME)
 % uiwait(handles.figure1);
 
 
 % --- Outputs from this function are returned to the command line.
-function varargout = GUI_StepOne_ExperimentInfo_OutputFcn(hObject, eventdata, handles)
+function varargout = testGuiPreProcessing_OutputFcn(hObject, eventdata, handles)
 % varargout  cell array for returning output args (see VARARGOUT);
 % hObject    handle to figure
 % eventdata  reserved - to be defined in a future version of MATLAB
@@ -143,11 +142,6 @@ TempData.ExpeInfo.nmouse = eval(get(hObject,'String'));
 guidata(hObject,TempData)
 set(handles.Mouse_Strain_List,'Enable','On')
 set(handles.MouseNum_Edit,'BackgroundColor',[0.8 0.4 0.2])
-
-function DataHardDrive_Edit_Callback(hObject, eventdata, handles)
-TempData = guidata(hObject);
-TempData.ExpeInfo.harddrive = eval(get(hObject,'String'));
-guidata(hObject,TempData)
 
 
 % Mouse strain
@@ -734,11 +728,8 @@ end
 
 ExpeInfo.StimSession = min([sum(handles.TrackStimSession),1]);
 
-
-ExpeInfo.SessionType = strrep(ExpeInfo.SessionType,' ','_');
-
+keyboard
 save('ExpeInfo.mat','ExpeInfo')
-set(handles.NextStepButton,'enable','On')
 
 
 function handles = FillInSlotsWithExpeInfo(handles)
@@ -777,9 +768,6 @@ if isfield(handles.ExpeInfo,'date')
     set(handles.Date_Month,'BackgroundColor',[0.8 0.4 0.2])
     set(handles.Date_Day,'BackgroundColor',[0.8 0.4 0.2])
     
-    if length(handles.ExpeInfo.date) == 6
-        handles.ExpeInfo.date = ['20' handles.ExpeInfo.date];
-    end
     set(handles.Date_Year,'String',handles.ExpeInfo.date(1:4))
     set(handles.Date_Month,'String',handles.ExpeInfo.date(5:6))
     set(handles.Date_Day,'String',handles.ExpeInfo.date(7:8))
@@ -1007,12 +995,12 @@ if isfield(handles.ExpeInfo,'ElecStimInfo')
     end
     
     if isfield(handles.ExpeInfo.ElecStimInfo,'ElecStimIntensity1')
-        set(handles.Stim1_Intensity_Edit,'String',num2str(handles.ExpeInfo.ElecStimInfo.ElecStimIntensity1))
+        set(handles.Stim1_Intensity_Edit,'String',num2str(ExpeInfo.ElecStimInfo.ElecStimIntensity1))
         set(handles.Stim1_Intensity_Edit,'BackgroundColor',[0.8 0.4 0.2])
     end
     
     if isfield(handles.ExpeInfo.ElecStimInfo,'ElecStimIntensity2')
-        set(handles.Stim2_Intensity_Edit,'String',num2str(handles.ExpeInfo.ElecStimInfo.ElecStimIntensity2))
+        set(handles.Stim2_Intensity_Edit,'String',num2str(ExpeInfo.ElecStimInfo.ElecStimIntensity2))
         set(handles.Stim2_Intensity_Edit,'BackgroundColor',[0.8 0.4 0.2])
     end
     
@@ -1026,8 +1014,3 @@ function RecordingRoom_CreateFcn(hObject, eventdata, handles)
 % hObject    handle to RecordingRoom (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    empty - handles not created until after all CreateFcns called
-
-
-function NextStepButton_Callback(hObject, eventdata, handles)
-close(handles.figure1)
-GUI_StepTwo_RecordingInfo

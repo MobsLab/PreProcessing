@@ -1,35 +1,35 @@
-function varargout = GUI_StepTwo_RecordingInfo(varargin)
-% GUI_STEPTWO_RECORDINGINFO MATLAB code for GUI_StepTwo_RecordingInfo.fig
-%      GUI_STEPTWO_RECORDINGINFO, by itself, creates a new GUI_STEPTWO_RECORDINGINFO or raises the existing
+function varargout = InfoLFPStartGUI_v3(varargin)
+% INFOLFPSTARTGUI_V3 MATLAB code for InfoLFPStartGUI_v3.fig
+%      INFOLFPSTARTGUI_V3, by itself, creates a new INFOLFPSTARTGUI_V3 or raises the existing
 %      singleton*.
 %
-%      H = GUI_STEPTWO_RECORDINGINFO returns the handle to a new GUI_STEPTWO_RECORDINGINFO or the handle to
+%      H = INFOLFPSTARTGUI_V3 returns the handle to a new INFOLFPSTARTGUI_V3 or the handle to
 %      the existing singleton*.
 %
-%      GUI_STEPTWO_RECORDINGINFO('CALLBACK',hObject,eventData,handles,...) calls the local
-%      function named CALLBACK in GUI_STEPTWO_RECORDINGINFO.M with the given input arguments.
+%      INFOLFPSTARTGUI_V3('CALLBACK',hObject,eventData,handles,...) calls the local
+%      function named CALLBACK in INFOLFPSTARTGUI_V3.M with the given input arguments.
 %
-%      GUI_STEPTWO_RECORDINGINFO('Property','Value',...) creates a new GUI_STEPTWO_RECORDINGINFO or raises the
+%      INFOLFPSTARTGUI_V3('Property','Value',...) creates a new INFOLFPSTARTGUI_V3 or raises the
 %      existing singleton*.  Starting from the left, property value pairs are
-%      applied to the GUI before GUI_StepTwo_RecordingInfo_OpeningFcn gets called.  An
+%      applied to the GUI before InfoLFPStartGUI_v3_OpeningFcn gets called.  An
 %      unrecognized property name or invalid value makes property application
-%      stop.  All inputs are passed to GUI_StepTwo_RecordingInfo_OpeningFcn via varargin.
+%      stop.  All inputs are passed to InfoLFPStartGUI_v3_OpeningFcn via varargin.
 %
 %      *See GUI Options on GUIDE's Tools menu.  Choose "GUI allows only one
 %      instance to run (singleton)".
 %
 % See also: GUIDE, GUIDATA, GUIHANDLES
 
-% Edit the above text to modify the response to help GUI_StepTwo_RecordingInfo
+% Edit the above text to modify the response to help InfoLFPStartGUI_v3
 
-% Last Modified by GUIDE v2.5 24-Dec-2018 15:57:49
+% Last Modified by GUIDE v2.5 14-Dec-2018 13:19:52
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
 gui_State = struct('gui_Name',       mfilename, ...
     'gui_Singleton',  gui_Singleton, ...
-    'gui_OpeningFcn', @GUI_StepTwo_RecordingInfo_OpeningFcn, ...
-    'gui_OutputFcn',  @GUI_StepTwo_RecordingInfo_OutputFcn, ...
+    'gui_OpeningFcn', @InfoLFPStartGUI_v3_OpeningFcn, ...
+    'gui_OutputFcn',  @InfoLFPStartGUI_v3_OutputFcn, ...
     'gui_LayoutFcn',  [] , ...
     'gui_Callback',   []);
 if nargin && ischar(varargin{1})
@@ -44,15 +44,15 @@ end
 % End initialization code - DO NOT EDIT
 
 
-% --- Executes just before GUI_StepTwo_RecordingInfo is made visible.
-function GUI_StepTwo_RecordingInfo_OpeningFcn(hObject, eventdata, handles, varargin)
+% --- Executes just before InfoLFPStartGUI_v3 is made visible.
+function InfoLFPStartGUI_v3_OpeningFcn(hObject, eventdata, handles, varargin)
 % This function has no output args, see OutputFcn.
 % hObject    handle to figure
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-% varargin   command line arguments to GUI_StepTwo_RecordingInfo (see VARARGIN)
+% varargin   command line arguments to InfoLFPStartGUI_v3 (see VARARGIN)
 
-% Choose default command line output for GUI_StepTwo_RecordingInfo
+% Choose default command line output for InfoLFPStartGUI_v3
 handles.output = hObject;
 load('ExpeInfo.mat')
 handles.ExpeInfo = ExpeInfo;
@@ -65,19 +65,18 @@ if isfield(ExpeInfo,'PreProcessingInfo')
     end
     
     if isfield(ExpeInfo.PreProcessingInfo,'NumAccelero')
-    handles.NumAccelero.Value = (ExpeInfo.PreProcessingInfo.NumAccelero/3)+1;
+    set(handles.NumAccelero,'String',num2str(ExpeInfo.PreProcessingInfo.NumAccelero))
     set(handles.NumAccelero,'BackgroundColor',[0.8 0.4 0.2])
     else
             handles.ExpeInfo.PreProcessingInfo.NumAccelero = 0;
     end
     
     if isfield(ExpeInfo.PreProcessingInfo,'NumDigChan')
-        handles.NumDigChan.Value = (ExpeInfo.PreProcessingInfo.NumDigChan)+1;
-        set(handles.NumDigChan,'BackgroundColor',[0.8 0.4 0.2])
+    set(handles.NumDigChan,'String',num2str(ExpeInfo.PreProcessingInfo.NumDigChan))
+    set(handles.NumDigChan,'BackgroundColor',[0.8 0.4 0.2])
     else
         handles.ExpeInfo.PreProcessingInfo.NumDigChan = 0;
     end
-    
     
     if isfield(ExpeInfo.PreProcessingInfo,'NumAnalog')
     set(handles.NumAnalog,'String',num2str(ExpeInfo.PreProcessingInfo.NumAnalog))
@@ -98,14 +97,6 @@ if isfield(ExpeInfo,'PreProcessingInfo')
     else
         handles.ExpeInfo.PreProcessingInfo.DoSpikes = 0; 
     end
-    
-    if isfield(ExpeInfo,'ProbeName')
-        ProbeNomenclature
-        set(handles.SiliconProbeName,'Value',find(strcmp(ProbeName,handles.ExpeInfo.ProbeName)))
-        set(handles.SiliconProbeName,'BackgroundColor',[0.8 0.4 0.2])
-    else
-        handles.ExpeInfo.ProbeName = 'None';
-    end
 
    
 else
@@ -115,20 +106,16 @@ else
     handles.ExpeInfo.PreProcessingInfo.NumDigChan = 0;
     handles.ExpeInfo.PreProcessingInfo.NumDigInput = 0;
     handles.ExpeInfo.PreProcessingInfo.NumAnalog = 0;
-    handles.ExpeInfo.PreProcessingInfo.DoSpikes = 0;
-    handles.ExpeInfo.ProbeName = 'None';
-
-
 end
 % Update handles structure
 guidata(hObject, handles);
 
-% UIWAIT makes GUI_StepTwo_RecordingInfo wait for user response (see UIRESUME)
+% UIWAIT makes InfoLFPStartGUI_v3 wait for user response (see UIRESUME)
 % uiwait(handles.figure1);
 
 
 % --- Outputs from this function are returned to the command line.
-function varargout = GUI_StepTwo_RecordingInfo_OutputFcn(hObject, eventdata, handles)
+function varargout = InfoLFPStartGUI_v3_OutputFcn(hObject, eventdata, handles)
 % varargout  cell array for returning output args (see VARARGOUT);
 % hObject    handle to figure
 % eventdata  reserved - to be defined in a future version of MATLAB
@@ -167,7 +154,6 @@ guidata(hObject,TempData)
 
 
 
-
 % --- Executes during object creation, after setting all properties.
 function NumAccelero_CreateFcn(hObject, eventdata, handles)
 % hObject    handle to NumAccelero (see GCBO)
@@ -201,13 +187,6 @@ if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgr
     set(hObject,'BackgroundColor','white');
 end
 
-% Mouse strain
-function Probe_List_CreateFcn(hObject, eventdata, handles)
-if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
-    set(hObject,'BackgroundColor','white');
-end
-ProbeNomenclature
-set(hObject,'string',strjoin(ProbeName,'|'))
 
 
 function NumAnalog_Callback(hObject, eventdata, handles)
@@ -235,10 +214,6 @@ TempData = guidata(hObject);
 TempData.ExpeInfo.PreProcessingInfo.NumDigInput = eval(get(hObject,'String'));
 guidata(hObject,TempData)
 
-function ProbeInput_Callback(hObject, eventdata, handles)
-TempData = guidata(hObject);
-TempData.ExpeInfo.ProbeName = strtrim(hObject.String(hObject.Value,:));
-guidata(hObject,TempData)
 
 
 % --- Executes during object creation, after setting all properties.
@@ -280,11 +255,6 @@ save('ExpeInfo.mat','ExpeInfo')
 set(TempData.InfoLFPButton,'enable','on');
 set(TempData.DigChanIdButton,'enable','on');
 set(TempData.GetChanToAnalayseButton,'enable','on');
-set(TempData.GetQualChannelButton,'enable','on');
-set(TempData.nextstep,'enable','on');
-if TempData.ExpeInfo.PreProcessingInfo.DoSpikes ==1
-set(TempData.GuiSpikeChannels,'enable','on');
-end
 
 
 % --- Executes during object creation, after setting all properties.
@@ -299,6 +269,7 @@ function InfoLFPButton_Callback(hObject, eventdata, handles)
 TempData = guidata(hObject);
 ExpeInfo = TempData.ExpeInfo;
 save('ExpeInfo.mat','ExpeInfo')
+GUIGetChannelInfo
 FigureID = guidata(GUIGetChannelInfo);
 waitfor(FigureID.figure1)
 load('ExpeInfo.mat','ExpeInfo')
@@ -319,6 +290,7 @@ function DigChanIdButton_Callback(hObject, eventdata, handles)
 TempData = guidata(hObject);
 ExpeInfo = TempData.ExpeInfo;
 save('ExpeInfo.mat','ExpeInfo')
+GUIGetDigitalInfo
 FigureID = guidata(GUIGetDigitalInfo);
 waitfor(FigureID.figure1)
 load('ExpeInfo.mat','ExpeInfo')
@@ -343,15 +315,6 @@ load('ExpeInfo.mat','ExpeInfo')
 TempData.ExpeInfo = ExpeInfo;
 guidata(hObject,TempData)
 
-function GetTopQualitySignalsCheck_Callback(hObject, eventdata, handles)
-TempData = guidata(hObject);
-ExpeInfo = TempData.ExpeInfo;
-GUITopQualitySignalsCheck
-load('ExpeInfo.mat','ExpeInfo')
-TempData.ExpeInfo = ExpeInfo;
-guidata(hObject,TempData)
-
-
 
 
 function GetChanToAnalayseButton_CreateFcn(hObject, eventdata, handles)
@@ -362,13 +325,9 @@ function GuiSpikeChannels_Callback(hObject, eventdata, handles)
 TempData = guidata(hObject);
 ExpeInfo = TempData.ExpeInfo;
 save('ExpeInfo.mat','ExpeInfo')
+GUIGetSpikeInfo
 FigureID = guidata(GUIGetSpikeInfo);
 waitfor(FigureID.figure1)
 load('ExpeInfo.mat','ExpeInfo')
 TempData.ExpeInfo = ExpeInfo;
 guidata(hObject,TempData)
-
-
-function nextstep_Callback(hObject, eventdata, handles)
-close(handles.figure1)
-GUI_StepThree_FolderInfo

@@ -1,10 +1,11 @@
- 
-%% File by file preparation for concatenation
+
+%% File by file preparation for concatenation %
 clear all
 load('ExpeInfo.mat')
 BaseFileName = ['M' num2str(ExpeInfo.nmouse) '_' ExpeInfo.date '_' ExpeInfo.SessionType];
 FinalFolder = cd;
-is_OpenEphys = false;
+
+
 
 switch ExpeInfo.PreProcessingInfo.IsThereEphys
     case 'Yes'
@@ -41,13 +42,8 @@ switch ExpeInfo.PreProcessingInfo.IsThereEphys
                 
                 
                 % copy the .dat and the .xml
-                try
-                    movefile(fullfile(ExpeInfo.PreProcessingInfo.FolderForConcatenation_Ephys{f}, ['amplifier_M' num2str(ExpeInfo.nmouse) '.dat']),...
-                        fullfile(FinalFolder, [BaseFileName '-' sprintf('%02d',f) '.dat']));
-                catch
-                    movefile(fullfile(ExpeInfo.PreProcessingInfo.FolderForConcatenation_Ephys{f}, ['amplifier.dat']),...
-                        fullfile(FinalFolder, [BaseFileName '-' sprintf('%02d',f) '.dat']));
-                end
+                movefile(fullfile(ExpeInfo.PreProcessingInfo.FolderForConcatenation_Ephys{f}, ['amplifier_M' num2str(ExpeInfo.nmouse) '.dat']),...
+                    fullfile(FinalFolder, [BaseFileName '-' sprintf('%02d',f) '.dat']));
                 copyfile(fullfile(ExpeInfo.PreProcessingInfo.FolderForConcatenation_Ephys{f}, 'amplifier.xml'),...
                     fullfile(FinalFolder, [BaseFileName '-' sprintf('%02d',f) '.xml']));
                 
@@ -90,8 +86,8 @@ switch ExpeInfo.PreProcessingInfo.IsThereEphys
                 % Merge
                 if exist(['amplifier_M' num2str(ExpeInfo.nmouse) '.dat'], 'file') == 2
                     movefile(['amplifier_M' num2str(ExpeInfo.nmouse) '.dat'], 'amplifier-wideband.dat');
-                elseif exist('amplifier.dat', 'file') == 2
-                    movefile('amplifier.dat', 'amplifier-wideband.dat');
+                else
+                    system('mv amplifier.dat amplifier-wideband.dat')
                 end
                 if ExpeInfo.PreProcessingInfo.NumAccelero>0
                     movefile('auxiliary.dat', 'amplifier-accelero.dat');
@@ -106,10 +102,8 @@ switch ExpeInfo.PreProcessingInfo.IsThereEphys
                 
                 disp('file is merged and ref subtracted - copying ...')
                 % copy the file
-%                 copyfile(fullfile(ExpeInfo.PreProcessingInfo.FolderForConcatenation_Ephys{f}, 'amplifier.dat'),...
-%                     fullfile(FinalFolder, [BaseFileName '-' sprintf('%02d',f) '.dat']));
-                movefile(fullfile(ExpeInfo.PreProcessingInfo.FolderForConcatenation_Ephys{f}, 'amplifier.dat'),...
-                    fullfile(FinalFolder, [BaseFileName '-' sprintf('%02d',f) '.dat']));                                % change done by BM on 23/02/2023
+                copyfile(fullfile(ExpeInfo.PreProcessingInfo.FolderForConcatenation_Ephys{f}, 'amplifier.dat'),...
+                    fullfile(FinalFolder, [BaseFileName '-' sprintf('%02d',f) '.dat']));
                 copyfile(fullfile(ExpeInfo.PreProcessingInfo.FolderForConcatenation_Ephys{f}, 'amplifier.xml'),...
                     fullfile(FinalFolder, [BaseFileName '-' sprintf('%02d',f) '.xml']));
                 
@@ -119,6 +113,7 @@ switch ExpeInfo.PreProcessingInfo.IsThereEphys
                 disp('file is unpreprocessed - subtracting ref...')
                 % Create the xml
                 WriteExpeInfoToXml(ExpeInfo)
+                
                 
                 % subtract the reference
                 RefChannel = ExpeInfo.ChannelToAnalyse.Ref;
@@ -167,7 +162,7 @@ switch ExpeInfo.PreProcessingInfo.IsThereEphys
         TimeBeginRec = TimeBeginRec_Allfiles(1,:);
         save([FinalFolder filesep 'TimeRec.mat'],'TimeEndRec','TimeBeginRec','TimeEndRec_Allfiles','TimeBeginRec_Allfiles')
         
-        %% %% Create session-wide .xml
+        %% What's this???
         copyfile([FinalFolder filesep BaseFileName '-' sprintf('%02d',f) '.xml'],...
             [FinalFolder filesep BaseFileName '.xml']);
 
@@ -181,8 +176,8 @@ switch ExpeInfo.PreProcessingInfo.IsThereEphys
         end
         
         
-         %% make lfp
-       system(['ndm_lfp ' BaseFileName])
+        %% make lfp
+        system(['ndm_lfp ' BaseFileName])
         
         %% create lfp and channels to analyse folders
         
@@ -203,11 +198,9 @@ switch ExpeInfo.PreProcessingInfo.IsThereEphys
         %% run the makeData scripts
         SetCurrentSession([BaseFileName '.xml'])
         
-        SessLength = MakeData_LFP_PluggedOnly(FinalFolder,ExpeInfo);
+        SessLength = MakeData_LFP(FinalFolder);
         
-        % This is SUPER dirty!! DO it again Sophie!! 
-        % I'm not sure who wrote this but do it yourself my friend if you're so
-        % worried about it. xxx
+        % This is SUPER dirty!! DO it again Sophie!!
         if length(ExpeInfo.PreProcessingInfo.FolderForConcatenation_Ephys)==1
             %evt
             evt.time(1)=0;
@@ -293,48 +286,73 @@ switch ExpeInfo.PreProcessingInfo.IsThereEphys
                 % Do the preprcessing steps
                 system(['ndm_hipass ' BaseFileName '_SpikeRef'])
                 system(['ndm_extractspikes ' BaseFileName '_SpikeRef'])
-                
-                if strcmp(ExpeInfo.PreProcessingInfo.CleanSpikes, 'Yes')
-                    disp('I will clean bad spikes...');
-                    
-                    if exist('UnfilteredChans', 'dir') ~= 7 || isempty(dir([FinalFolder filesep 'UnfilteredChans/*.mat']))
-                        MakeData_Detection(FinalFolder, ExpeInfo.ChannelToAnalyse.Ref);
-                    end
-                    
-                    % Get spikes without artefacts
-                    files = dir([FinalFolder filesep 'UnfilteredChans/*.mat']);
-                    CleanEpoch = DefineCleanSpikesEpochs([files(1).folder filesep files(1).name], FinalFolder,...
-                        ExpeInfo.PreProcessingInfo.StimDur);
-                    
-                    % Remove spikes
-                    RemoveArtefactualSpikes(FinalFolder, CleanEpoch, [BaseFileName '_SpikeRef']);
-                        
-                end
-                
                 system(['ndm_pca ' BaseFileName '_SpikeRef'])
                 
             else
- 
+                
+                % Do the preprcessing steps%% behaviour (Camera)
+% First sort out times if they don't yet exist because tehre is no ephys
+switch ExpeInfo.PreProcessingInfo.IsThereBehav
+    case 'Yes'
+        switch ExpeInfo.PreProcessingInfo.IsThereEphys
+            case 'No'
+                tps = 0;
+                tpsCatEvt = 0;
+                for f = 1:length(ExpeInfo.PreProcessingInfo.FolderForConcatenation_Behav)
+                    
+                    load([ExpeInfo.PreProcessingInfo.FolderForConcatenation_Behav{f} filesep 'behavResources.mat'] ,'PosMat')
+                    tps = tps + max(PosMat(:,1));
+                    tpsCatEvt = [tpsCatEvt, [tps;tps]']; % in seconds
+                    
+                end
+                tpsCatEvt(end) = [];
+                tpsCatEvt = num2cell(tpsCatEvt);
+                
+                try
+                    save([FinalFolder 'behavResources'],'tpsCatEvt','-append')
+                catch
+                    disp('Creating behavResources.mat')
+                    save([FinalFolder 'behavResources'],'tpsCatEvt')
+                end
+            case 'Yes'
+                disp('')
+        end
+    case 'No'
+        disp('')
+end
+
+
+switch ExpeInfo.PreProcessingInfo.IsThereBehav
+    case 'Yes'
+        
+        if ~strcmpi(ExpeInfo.CameraType, 'None')
+            if  length(ExpeInfo.PreProcessingInfo.FolderForConcatenation_Behav)==1
+                copyfile([ExpeInfo.PreProcessingInfo.FolderForConcatenation_Behav{1} filesep 'behavResources.mat'],...
+                    [FinalFolder filesep 'behavResources-temp.mat']);
+                TempVar = load([FinalFolder filesep 'behavResources-temp.mat']);
+                save([FinalFolder filesep 'behavResources.mat'],'-struct','TempVar','-append')
+                delete([FinalFolder filesep 'behavResources-temp.mat'])
+                
+            else
+                for f = 1:length(ExpeInfo.PreProcessingInfo.FolderForConcatenation_Behav)
+                    
+                    copyfile([ExpeInfo.PreProcessingInfo.FolderForConcatenation_Behav{f} filesep 'behavResources.mat'],...
+                        [FinalFolder filesep 'behavResources-' sprintf('%02d',f) '.mat']);
+                    filelist{f} = [FinalFolder filesep 'behavResources-' sprintf('%02d',f) '.mat'];
+                    
+                end
+                BehavResourcesConcatenation(filelist, ExpeInfo.PreProcessingInfo.FolderSessionName, tpsCatEvt, FinalFolder)
+            end
+        end
+        
+    case 'No'
+end
+
+disp('All done, you''re good! Jesus loves you. And your momma too')
+disp('All hail the Holy Octopus')
+
                 system(['ndm_hipass ' BaseFileName])
                 system(['ndm_extractspikes ' BaseFileName])
-                
-                if strcmp(ExpeInfo.PreProcessingInfo.CleanSpikes, 'Yes')
-                    disp('I will clean bad spikes...');
-                    
-                    if exist('UnfilteredChans', 'dir') ~= 7 || isempty(dir([FinalFolder filesep 'UnfilteredChans/*.mat']))
-                        MakeData_Detection(FinalFolder, ExpeInfo.ChannelToAnalyse.Ref);
-                    end
-                    
-                    % Get spikes without artefacts
-                    files = dir([FinalFolder filesep 'UnfilteredChans/*.mat']);
-                    CleanEpoch = DefineCleanSpikesEpochs([files(1).folder filesep files(1).name], FinalFolder,...
-                        ExpeInfo.PreProcessingInfo.StimDur);
-                    
-                    % Remove spikes
-                    RemoveArtefactualSpikes(FinalFolder, CleanEpoch, BaseFileName);
-                        
-                end
-          
                 system(['ndm_pca ' BaseFileName])
             end
             
@@ -345,6 +363,7 @@ switch ExpeInfo.PreProcessingInfo.IsThereEphys
         disp('No Ephys');
         
 end
+
 
 %% behaviour (Camera)
 % First sort out times if they don't yet exist because tehre is no ephys
@@ -391,13 +410,9 @@ switch ExpeInfo.PreProcessingInfo.IsThereBehav
                 
             else
                 for f = 1:length(ExpeInfo.PreProcessingInfo.FolderForConcatenation_Behav)
-                    try
-                        copyfile([ExpeInfo.PreProcessingInfo.FolderForConcatenation_Behav{f} filesep 'behavResources.mat'],...
+                    
+                    copyfile([ExpeInfo.PreProcessingInfo.FolderForConcatenation_Behav{f} filesep 'behavResources.mat'],...
                         [FinalFolder filesep 'behavResources-' sprintf('%02d',f) '.mat']);
-                    catch
-                        copyfile([ExpeInfo.PreProcessingInfo.FolderForConcatenation_Behav{f}{1} filesep 'behavResources.mat'],...
-                        [FinalFolder filesep 'behavResources-' sprintf('%02d',f) '.mat']);
-                    end
                     filelist{f} = [FinalFolder filesep 'behavResources-' sprintf('%02d',f) '.mat'];
                     
                 end

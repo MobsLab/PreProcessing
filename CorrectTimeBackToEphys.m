@@ -12,7 +12,6 @@ behavResources.PosMat(:,1) = behavResources.PosMat(:,1) - 1 + TTLInfo_sess.Start
 behavResources.PosMatInit(:,1) = behavResources.PosMatInit(:,1) - 1 + TTLInfo_sess.StartSession/1e4;
 behavResources.im_diff(:,1) = behavResources.im_diff(:,1) - 1 + TTLInfo_sess.StartSession/1e4;
 behavResources.im_diffInit(:,1) = behavResources.im_diffInit(:,1) - 1 + TTLInfo_sess.StartSession/1e4;
-behavResources.MouseTemp(:,1) = behavResources.MouseTemp(:,1) - 1 + TTLInfo_sess.StartSession/1e4;
 tt = Range(behavResources.Imdifftsd) - 1e4 + TTLInfo_sess.StartSession;
 behavResources.Imdifftsd = tsd(tt, Data(behavResources.Imdifftsd)); clear tt
 tt = Range(behavResources.Xtsd) - 1e4 + TTLInfo_sess.StartSession;
@@ -21,12 +20,17 @@ tt = Range(behavResources.Ytsd) - 1e4 + TTLInfo_sess.StartSession;
 behavResources.Ytsd = tsd(tt, Data(behavResources.Ytsd)); clear tt
 tt = Range(behavResources.Vtsd) - 1e4 + TTLInfo_sess.StartSession;
 behavResources.Vtsd = tsd(tt, Data(behavResources.Vtsd)); clear tt
-for izone = 1:length(behavResources.ZoneEpoch)
-    st = Start(behavResources.ZoneEpoch{izone}) - 1e4 + TTLInfo_sess.StartSession;
-    en = End(behavResources.ZoneEpoch{izone}) - 1e4 + TTLInfo_sess.StartSession;
-    behavResources.ZoneEpoch{izone} = intervalSet(st,en); clear st en
+if isfield(behavResources, 'ZoneEpoch')
+    for izone = 1:length(behavResources.ZoneEpoch)
+        st = Start(behavResources.ZoneEpoch{izone}) - 1e4 + TTLInfo_sess.StartSession;
+        en = End(behavResources.ZoneEpoch{izone}) - 1e4 + TTLInfo_sess.StartSession;
+        behavResources.ZoneEpoch{izone} = intervalSet(st,en); clear st en
+    end
 end
 
+if isfield(behavResources, 'MouseTemp')
+    behavResources.MouseTemp(:,1) = behavResources.MouseTemp(:,1) - 1 + TTLInfo_sess.StartSession/1e4;
+end
 if isfield(behavResources, 'CleanPosMat')
     behavResources.CleanPosMat(:,1) = behavResources.CleanPosMat(:,1) - 1 +TTLInfo_sess.StartSession/1e4;
 end

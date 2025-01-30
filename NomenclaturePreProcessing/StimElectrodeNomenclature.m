@@ -6,4 +6,4 @@
 
 %Brain regions
 StimRegionName = ...
-    {'PAG','MFB','Eyeschock'};
+    {'PAG','MFB','Eyeschock','VHC'};

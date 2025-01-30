@@ -1,5 +1,5 @@
 function varargout = GUI_StepTwo_RecordingInfo(varargin)
-% GUI_STEPTWO_RECORDINGINFO MATLAB code for GUI_StepTwo_RecordingInfo.fig
+% GUI_STEPTWO_RECORDINGINFO MATLAB code for GUI_StepTwo_RecordingInfo.fig %
 %      GUI_STEPTWO_RECORDINGINFO, by itself, creates a new GUI_STEPTWO_RECORDINGINFO or raises the existing
 %      singleton*.
 %
@@ -98,14 +98,6 @@ if isfield(ExpeInfo,'PreProcessingInfo')
     else
         handles.ExpeInfo.PreProcessingInfo.DoSpikes = 0; 
     end
-    
-    if isfield(ExpeInfo,'ProbeName')
-        ProbeNomenclature
-        set(handles.SiliconProbeName,'Value',find(strcmp(ProbeName,handles.ExpeInfo.ProbeName)))
-        set(handles.SiliconProbeName,'BackgroundColor',[0.8 0.4 0.2])
-    else
-        handles.ExpeInfo.ProbeName = 'None';
-    end
 
    
 else
@@ -116,8 +108,6 @@ else
     handles.ExpeInfo.PreProcessingInfo.NumDigInput = 0;
     handles.ExpeInfo.PreProcessingInfo.NumAnalog = 0;
     handles.ExpeInfo.PreProcessingInfo.DoSpikes = 0;
-    handles.ExpeInfo.ProbeName = 'None';
-
 
 end
 % Update handles structure
@@ -167,7 +157,6 @@ guidata(hObject,TempData)
 
 
 
-
 % --- Executes during object creation, after setting all properties.
 function NumAccelero_CreateFcn(hObject, eventdata, handles)
 % hObject    handle to NumAccelero (see GCBO)
@@ -201,13 +190,6 @@ if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgr
     set(hObject,'BackgroundColor','white');
 end
 
-% Mouse strain
-function Probe_List_CreateFcn(hObject, eventdata, handles)
-if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
-    set(hObject,'BackgroundColor','white');
-end
-ProbeNomenclature
-set(hObject,'string',strjoin(ProbeName,'|'))
 
 
 function NumAnalog_Callback(hObject, eventdata, handles)
@@ -235,10 +217,6 @@ TempData = guidata(hObject);
 TempData.ExpeInfo.PreProcessingInfo.NumDigInput = eval(get(hObject,'String'));
 guidata(hObject,TempData)
 
-function ProbeInput_Callback(hObject, eventdata, handles)
-TempData = guidata(hObject);
-TempData.ExpeInfo.ProbeName = strtrim(hObject.String(hObject.Value,:));
-guidata(hObject,TempData)
 
 
 % --- Executes during object creation, after setting all properties.
@@ -280,7 +258,6 @@ save('ExpeInfo.mat','ExpeInfo')
 set(TempData.InfoLFPButton,'enable','on');
 set(TempData.DigChanIdButton,'enable','on');
 set(TempData.GetChanToAnalayseButton,'enable','on');
-set(TempData.GetQualChannelButton,'enable','on');
 set(TempData.nextstep,'enable','on');
 if TempData.ExpeInfo.PreProcessingInfo.DoSpikes ==1
 set(TempData.GuiSpikeChannels,'enable','on');
@@ -342,15 +319,6 @@ GUIGetChannelsToAnalyse
 load('ExpeInfo.mat','ExpeInfo')
 TempData.ExpeInfo = ExpeInfo;
 guidata(hObject,TempData)
-
-function GetTopQualitySignalsCheck_Callback(hObject, eventdata, handles)
-TempData = guidata(hObject);
-ExpeInfo = TempData.ExpeInfo;
-GUITopQualitySignalsCheck
-load('ExpeInfo.mat','ExpeInfo')
-TempData.ExpeInfo = ExpeInfo;
-guidata(hObject,TempData)
-
 
 
 

@@ -9,9 +9,14 @@ DrugName = ...
     {'SAL',... % saline
     'MTZL',... % methimazole
     'MDZ',... % midazolam
+    'DZP',... % diazepam    
     'FLX',... % fluoxetine
     'CHRONIC FLX',... % chronic fluoxetine 
     'LPS',... % lipopolysaccharide
 'Atropine',...% muscarinic antagonist
     'CNO',...  % clozapine n oxide (for dreadd)
+    'BUS',...  % buspirone
+    'CHRONIC BUS',...  % chronic buspirone
+    'NICOTINE',...  % chronic buspirone
+    'CHRONIC NICOTINE',...  % chronic buspirone
     };

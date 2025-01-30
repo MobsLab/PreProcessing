@@ -24,7 +24,7 @@ function varargout = GUI_StepThree_FolderInfo(varargin)
 
 % Last Modified by GUIDE v2.5 24-Dec-2018 09:09:20
 
-% Begin initialization code - DO NOT EDIT
+% Begin initialization code - DO NOT EDIT %
 gui_Singleton = 1;
 gui_State = struct('gui_Name',       mfilename, ...
                    'gui_Singleton',  gui_Singleton, ...
@@ -99,6 +99,7 @@ function varargout = GUI_StepThree_FolderInfo_OutputFcn(hObject, eventdata, hand
 % Get default command line output from handles structure
 varargout{1} = handles.output;
 
+
 % --- Executes on button press in MergeCheckbox.
 function MergeCheckbox_Callback(hObject, eventdata, handles)
 TempData = guidata(hObject);
@@ -110,15 +111,7 @@ TempData = guidata(hObject);
 ExpeInfo = TempData.ExpeInfo;
 save('ExpeInfo.mat','ExpeInfo')
 delete(TempData.figure1)
-if strcmp(ExpeInfo.PreProcessingInfo.IsThereEphys, 'Yes')
-    if strcmp(ExpeInfo.PreProcessingInfo.TypeOfSystem, 'Intan')
-        LastStepDoPreProcessing_SB
-    elseif strcmp(ExpeInfo.PreProcessingInfo.TypeOfSystem, 'OpenEphys or mixed')
-        LastStep_PreProcessing_OE_DB
-    end
-else
-    LastStepDoPreProcessing_SB
-end
+LastStepDoPreProcessing_SB
 
 
 function GetDataFolders_Callback(hObject, eventdata, handles)    
@@ -131,7 +124,10 @@ function GetDataFolders_Callback(hObject, eventdata, handles)
     guidata(hObject,TempData)
     set(handles.ChooseFolderOfInterest,'string',strjoin(ExpeInfo.PreProcessingInfo.FolderForConcatenation_Ephys,'|'))
     
+
     
+    
+  
 function ChooseFolderOfInterest_Callback(hObject, eventdata, handles)
 TempData = guidata(hObject);
 items = get(hObject,'String')
@@ -139,21 +135,20 @@ TempData.ActiveFolder = strtrim(items(get(hObject,'Value'),:));
 
 set(handles.WideBandCheckText,'String',['amplifier.dat with ' num2str(TempData.ExpeInfo.PreProcessingInfo.NumWideband) ' channels'])
 
-if strcmp(TempData.ExpeInfo.PreProcessingInfo.IsThereEphys, 'Yes')
-    if TempData.ExpeInfo.PreProcessingInfo.MergeDone{hObject.Value}
-        set(TempData.ArrowBox,'String',['----->'])
-        set(TempData.mergedfileCheck,'String',['amplifier.dat with ',...
-            num2str(TempData.ExpeInfo.PreProcessingInfo.NumAnalog + TempData.ExpeInfo.PreProcessingInfo.NumDigChan + TempData.ExpeInfo.PreProcessingInfo.NumAccelero +  TempData.ExpeInfo.PreProcessingInfo.NumWideband) ' channels'])
-        if TempData.ExpeInfo.PreProcessingInfo.RefDone{hObject.Value}
-            set(TempData.mergedfileCheck,'String',['amplifier_M' num2str(TempData.ExpeInfo.nmouse) '.dat with ',...
-                num2str(TempData.ExpeInfo.PreProcessingInfo.NumAnalog + TempData.ExpeInfo.PreProcessingInfo.NumDigChan + TempData.ExpeInfo.PreProcessingInfo.NumAccelero +  TempData.ExpeInfo.PreProcessingInfo.NumWideband) ' channels'])
-        end
-    else
-        set(TempData.ArrowBox,'String',[''])
-        set(TempData.mergedfileCheck,'String',[''])
+        
+if TempData.ExpeInfo.PreProcessingInfo.MergeDone{hObject.Value}
+    set(TempData.ArrowBox,'String',['----->'])
+    set(TempData.mergedfileCheck,'String',['amplifier.dat with ',...
+        num2str(TempData.ExpeInfo.PreProcessingInfo.NumAnalog + TempData.ExpeInfo.PreProcessingInfo.NumDigChan + TempData.ExpeInfo.PreProcessingInfo.NumAccelero +  TempData.ExpeInfo.PreProcessingInfo.NumWideband) ' channels'])
+    if TempData.ExpeInfo.PreProcessingInfo.RefDone{hObject.Value}
+    set(TempData.mergedfileCheck,'String',['amplifier_M' num2str(TempData.ExpeInfo.nmouse) '.dat with ',...
+        num2str(TempData.ExpeInfo.PreProcessingInfo.NumAnalog + TempData.ExpeInfo.PreProcessingInfo.NumDigChan + TempData.ExpeInfo.PreProcessingInfo.NumAccelero +  TempData.ExpeInfo.PreProcessingInfo.NumWideband) ' channels'])
+    end
+else
+    set(TempData.ArrowBox,'String',[''])
+    set(TempData.mergedfileCheck,'String',[''])
         if TempData.ExpeInfo.PreProcessingInfo.RefDone{hObject.Value}
             set(handles.WideBandCheckText,'String',['amplifier_M' num2str(TempData.ExpeInfo.nmouse) '.dat with ' num2str(TempData.ExpeInfo.PreProcessingInfo.NumWideband) ' channels'])
-        end
     end
 end
 

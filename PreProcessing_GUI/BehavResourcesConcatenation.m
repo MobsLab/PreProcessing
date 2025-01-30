@@ -1,6 +1,6 @@
-function BehavResourcesConcatenation (FilesList, FolderSessionName, tpsCatEvt, pathtosave, varargin)
+function BehavResourcesConcatenation (FilesList, FolderSessionName, tpsCatEvt, pathtosave)
 
-%%%% TestBehavResourcesConcatenation
+%%%%% TestBehavResourcesConcatenation
 % Concatenate behavResources for any number of sessions
 % Written for PreProcessingConcatenation pipeline (author - Sophie Bagur)
 % By Dima Bryzgalov december 2018
@@ -8,11 +8,11 @@ function BehavResourcesConcatenation (FilesList, FolderSessionName, tpsCatEvt, p
 % This code concatenates all possible behavResources.mat into one structure
 % with the length that is equal to number of concatenated sessions (behavResources)
 % !!! Time is unified and united in this structure !!!
-%
+% 
 % Also, it creates concatenated variables were the whole day of experiment
 % is concatenated. You can restrict your data to specifically created
 % epochs with the name <'SessionEpoch.SessionName'>
-%
+% 
 % Please find description of all variables inside the code
 %
 %  USAGE
@@ -24,28 +24,9 @@ function BehavResourcesConcatenation (FilesList, FolderSessionName, tpsCatEvt, p
 %    tpsCatEvt              time of beginning and end of each session
 %    pathtosave             Path to save behavioral resources
 %
-%
+% 
 %%
 %%%%%%%%%%%%%%%%%%%%%%%% -----------------------%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-%% Optional arguments
-for i = 1:2:length(varargin)
-    if ~ischar(varargin{i})
-        error(['Parameter ' num2str(i+2) ' is not a property (type ''help <a href="matlab:help FindRipples">FindRipples</a>'' for details).']);
-    end
-    switch(lower(varargin{i}))
-        case 'startinfo'
-            TTLInfo_sess = varargin{i+1};
-            if ~iscell(TTLInfo_sess) && length(FilesList)~=length(TTLInfo_sess)
-                error('Incorrect value for property ''StartInfo'' - should be a cell with TTLInfo for each session');
-            end
-        case 'intanrecorded'
-            IntanRecorded = varargin{i+1};
-            if ~iscell(IntanRecorded) && length(FilesList)~=length(TTLInfo_sess)
-                error('Incorrect value for property ''IntanRecorded'' - should be a cell with info for each session');
-            end
-    end
-end
 
 %% Load data
 for i = 1:length(FilesList)
@@ -61,27 +42,6 @@ end
 %% Start creating the structure - names of sessions
 for i=1:length(FilesList)
     behavResources(i).SessionName = FolderSessionName{i};
-end
-
-%% Correct back the time for Open Ephys
-% Timestamps in matlab-generated behavioral files come shifted 1 sec in the future.
-% This was done to account for the peculiarity of Intan software -
-% It records in the file data that start 1 sec before launching TTL came and
-% 1 sec after the stopping TTL arrived. To correct 1 sec mismatch between ephy
-% and behavioral data we simply add 1 sec to all times recorded in Matlab.
-% However, in OpenEphys this buffer does not exist. So we had to take this 1 sec back.
-%
-% We take it only from the first file because the rest is corrected by actual
-% length of ephy files
-
-if exist('TTLInfo_sess', 'var') && exist('IntanRecorded', 'var')
-    for isess = 1:length(FilesList)
-        if ~IntanRecorded{isess}
-            a{isess} = CorrectTimeBackToEphys(a{isess}, TTLInfo_sess{isess});
-        end
-    end
-else
-    warning('Intan only concatentenation. If you''ve recorded OpenEphys - stop and redo');
 end
 
 %% Add constants in the structure - note that they could be different for different sessions
@@ -122,7 +82,7 @@ for i=1:length(FilesList)
     else
         behavResources(i).Zone = [];
     end
-    
+
     if isfield(a{i}, 'ZoneLabels')
         behavResources(i).ZoneLabels = a{i}.ZoneLabels; % Names of Zones
     else
@@ -146,7 +106,7 @@ for i=1:length(FilesList)
     else
         behavResources(i).DiodMask = [];
     end
-    
+
     if isfield(a{i}, 'DiodThresh')
         behavResources(i).DiodThresh = a{i}.DiodThresh; % NosePoke Tracking: threshold for the synchronizing diod flashing
     else
@@ -157,6 +117,18 @@ for i=1:length(FilesList)
         behavResources(i).CleanMaskBounary = a{i}.CleanMaskBounary;
     else
         behavResources(i).CleanMaskBounary = [];
+    end
+    
+    if isfield(a{i}, 'AlignedXtsd')
+        behavResources(i).AlignedXtsd = a{i}.AlignedXtsd;
+    else
+        behavResources(i).AlignedXtsd = [];
+    end
+    
+    if isfield(a{i}, 'AlignedYtsd')
+        behavResources(i).AlignedXtsd = a{i}.AlignedXtsd;
+    else
+        behavResources(i).AlignedXtsd = [];
     end
     
     if isfield(a{i}, 'ZoneEpochAligned')
@@ -184,16 +156,15 @@ for i = 1:length(FilesList)
 end
 clear TimeTemp
 
-beg_end = cell2mat(tpsCatEvt);
-st = beg_end(1:2:end);
-en = beg_end(2:2:end);
+st = cell2mat(tpsCatEvt);
+st = st(1:2:end);
+en = cell2mat(tpsCatEvt);
+en = en(2:2:end);
 
-duration = nan(length(st),1);
-lasttime = nan(length(st),1);
 for i=1:length(st)
     duration(i) = en(i)-st(i);
     lasttime(i) = en(i);
-end
+end    
 
 %% Check for time inconsistencies
 for i=1:length(FilesList)
@@ -209,14 +180,14 @@ end
 
 if ~isempty(find(diff(ImdifftsdTime)<0, 1))
     disp('MANUAL MODE !!! - Time problem')
-    keyboard;  % to resume process type dbcont
+    keyboard;
 end
 
 clear ImdifftsdTimeTemp ImdifftsdTime
 
 %% Concatenate time-dependent variables
 
-% Concatenate PosMat (type - array)
+% Concatenate PosMat (type - array) 
 for i=1:length(FilesList)
     PosMatTemp{i} = a{i}.PosMat; % First column - time in sec, second column - X, third column - Y, fourth column - events
 end
@@ -228,7 +199,7 @@ for i = 1:length(FilesList)
 end
 clear PosMatTemp
 
-% Concatenate PosMatInit (type - array)
+% Concatenate PosMatInit (type - array) 
 for i=1:length(FilesList)
     PosMatInitTemp{i} = a{i}.PosMatInit; % Raw PosMat, it is interpolated to PosMat (where periods where mouse was lost are interpolated)
 end
@@ -240,10 +211,10 @@ for i = 1:length(FilesList)
 end
 clear PosMatInitTemp
 
-% Concatenate im_diff (type - array)
+% Concatenate im_diff (type - array) 
 for i=1:length(FilesList) % First column - time in sec, second column - difference in pixels between mask and a frame,...
     % third column - number of pixels used for subtraction
-    im_diffTemp{i} = a{i}.im_diff;
+    im_diffTemp{i} = a{i}.im_diff; 
 end
 for i=1:(length(FilesList)-1)
     im_diffTemp{i+1}(:,1) = im_diffTemp{i+1}(:,1) + (sum(duration(1:i)));
@@ -253,9 +224,9 @@ for i = 1:length(FilesList)
 end
 clear im_diffTemp
 
-% Concatenate im_diffInit (type - array)
+% Concatenate im_diffInit (type - array) 
 for i=1:length(FilesList) % Raw im_Diff, it is interpolated to im_Diff (where periods where mouse was lost are interpolated)
-    im_diffInitTemp{i} = a{i}.im_diffInit;
+    im_diffInitTemp{i} = a{i}.im_diffInit; 
 end
 for i=1:(length(FilesList)-1)
     im_diffInitTemp{i+1}(:,1) = im_diffInitTemp{i+1}(:,1) + (sum(duration(1:i)));
@@ -324,7 +295,7 @@ clear VtsdTimeTemp VtsdDataTemp
 
 %%%%% NON-OBLIGATORY
 
-% Concatenate GotFrame (type - array)
+% Concatenate GotFrame (type - array) 
 for i=1:length(FilesList) % Array of 0 and 1 - whether this frame is recorded to the video or not
     if isfield(a{i}, 'GotFrame')
         GotFrameTemp{i} = a{i}.GotFrame;
@@ -337,7 +308,7 @@ for i = 1:length(FilesList)
 end
 clear GotFrameTemp
 
-% Concatenate ZoneIndices (type array of indices * N - number of Zones)
+% Concatenate ZoneIndices (type array of indices * N - number of Zones) 
 for i=1:length(FilesList) % Time indices of the occasions when the animal was in the Zone
     if isfield(a{i}, 'ZoneIndices')
         for k = 1:length(a{i}.ZoneIndices)
@@ -433,7 +404,7 @@ for i=1:length(FilesList)
 end
 clear ZoneEpochTempStart ZoneEpochTempEnd ZoneEpochStart ZoneEpochEnd
 
-% Concatenate CleanPosMat (type - array)
+% Concatenate CleanPosMat (type - array) 
 for i=1:length(FilesList)
     if isfield(a{i},'CleanPosMat')
         CleanPosMatTemp{i} = a{i}.CleanPosMat; % First column - time in sec, second column - X, third column - Y, fourth column - events
@@ -457,7 +428,7 @@ for i = 1:length(FilesList)
 end
 clear CleanPosMatTemp
 
-% Concatenate CleanPosMatInit (type - array)
+% Concatenate CleanPosMatInit (type - array) 
 for i=1:length(FilesList)
     if isfield(a{i},'CleanPosMatInit')
         CleanPosMatInitTemp{i} = a{i}.CleanPosMatInit; % First column - time in sec, second column - X, third column - Y, fourth column - events
@@ -524,7 +495,7 @@ for i=1:(length(FilesList)-1)
 end
 for i = 1:length(FilesList)
     if ~isempty(YtsdTimeTemp{i})
-        behavResources(i).CleanYtsd = tsd(YtsdTimeTemp{i}, YtsdDataTemp{i});
+       behavResources(i).CleanYtsd = tsd(YtsdTimeTemp{i}, YtsdDataTemp{i});
     else
         behavResources(i).CleanYtsd = [];
     end
@@ -567,9 +538,13 @@ clear VtsdTimeTemp VtsdDataTemp
 
 % Concatenate CleanZoneIndices (type array of indices * N - number of Zones)
 for i=1:length(FilesList) % Time indices of the occasions when the animal was in the Zone
-    if isfield(a{i}, 'CleanZoneIndices')
-        for k = 1:length(a{i}.CleanZoneIndices)
-            ZoneIndicesTemp{i}{k} = a{i}.CleanZoneIndices{k};
+    if isfield(a{i}, 'CleanXtsd') && isfield(a{i}, 'ZoneIndices')
+        XXX = floor(Data(a{i}.CleanXtsd)*a{i}.Ratio_IMAonREAL);
+        XXX(find(isnan(XXX))) = 240;
+        YYY = floor(Data(a{i}.CleanYtsd)*a{i}.Ratio_IMAonREAL);
+        YYY(find(isnan(YYY))) = 320;
+        for k = 1:length(a{i}.ZoneIndices)
+            ZoneIndicesTemp{i}{k}=find(diag(a{i}.Zone{k}(XXX,YYY)));
         end
     else
         ZoneIndicesTemp{i} = [];
@@ -584,14 +559,32 @@ for i=1:length(FilesList)
         behavResources(i).CleanZoneIndices = ZoneIndicesTemp{i};
     end
 end
-clear ZoneIndicesTemp
+clear ZoneIndicesTemp ZoneIndices XXX YYY
 
 % Concatenate CleanZoneEpoch (type single tsa)
 for i=1:length(FilesList) % Epochs when the animals was situated in the Zone
-    if isfield(a{i}, 'CleanZoneEpoch')
-        for k = 1:length(a{i}.CleanZoneEpoch)
-            ZoneEpochTempStart{i}{k} = Start(a{i}.CleanZoneEpoch{k});
-            ZoneEpochTempEnd{i}{k} = End(a{i}.CleanZoneEpoch{k});
+    if isfield(a{i}, 'CleanXtsd') && isfield(a{i}, 'ZoneEpoch')
+        Xtemp=Data(a{i}.CleanXtsd);
+        T1=Range(a{i}.CleanXtsd);
+        XXX = floor(Data(a{i}.CleanXtsd)*a{i}.Ratio_IMAonREAL);
+        XXX(find(isnan(XXX))) = 240;
+        YYY = floor(Data(a{i}.CleanYtsd)*a{i}.Ratio_IMAonREAL);
+        YYY(find(isnan(YYY))) = 320;
+        for k = 1:length(a{i}.ZoneEpoch)
+            ZoneIndicesTemp{i}{k}=find(diag(a{i}.Zone{k}(XXX,YYY)));
+            Xtemp2=Xtemp*0;
+            Xtemp2(ZoneIndicesTemp{i}{k})=1;
+            ZoneEpoch{i}{k}=thresholdIntervals(tsd(T1,Xtemp2),0.5,'Direction','Above');
+        end
+    else
+        ZoneEpochTempStart{i} = [];
+    end
+end
+for i=1:length(FilesList) % Epochs when the animals was situated in the Zone
+    if isfield(a{i}, 'CleanXtsd') && isfield(a{i}, 'ZoneEpoch')
+        for k = 1:length(a{i}.ZoneEpoch)
+            ZoneEpochTempStart{i}{k} = Start(ZoneEpoch{i}{k});
+            ZoneEpochTempEnd{i}{k} = End(ZoneEpoch{i}{k});
         end
     else
         ZoneEpochTempStart{i} = [];
@@ -607,14 +600,15 @@ for i=1:(length(FilesList)-1)
 end
 for i=1:length(FilesList)
     if ~isempty (ZoneEpochTempStart{i})
-        for k = 1:length(a{i}.CleanZoneEpoch)
+        for k = 1:length(a{i}.ZoneEpoch)
             behavResources(i).CleanZoneEpoch{k} = intervalSet(ZoneEpochTempStart{i}{k}, ZoneEpochTempEnd{i}{k});
         end
     else
         behavResources(i).CleanZoneEpoch = [];
     end
 end
-clear ZoneEpochTempStart ZoneEpochTempEnd ZoneEpochStart ZoneEpochEnd
+clear ZoneEpochTempStart ZoneEpochTempEnd ZoneEpochStart ZoneEpochEnd Xtemp Xtemp2 T1 ZoneEpoch XXX YYY
+
 
 % AlignedXtsd
 for i=1:length(FilesList) % tsd of X coordinates
@@ -659,7 +653,7 @@ for i=1:(length(FilesList)-1)
 end
 for i = 1:length(FilesList)
     if ~isempty(YtsdTimeTemp{i})
-        behavResources(i).AlignedYtsd = tsd(YtsdTimeTemp{i}, YtsdDataTemp{i});
+       behavResources(i).AlignedYtsd = tsd(YtsdTimeTemp{i}, YtsdDataTemp{i});
     else
         behavResources(i).AlignedYtsd = [];
     end
@@ -688,7 +682,7 @@ end
 for i=1:length(FilesList)
     if ~isempty (ZoneEpochTempStart{i})
         for k = 1:length(a{i}.ZoneEpochAligned)
-            behavResources(i).ZoneEpochAligned{k} = intervalSet(ZoneEpochTempStart{i}{k}, ZoneEpochTempEnd{i}{k});
+           behavResources(i).ZoneEpochAligned{k} = intervalSet(ZoneEpochTempStart{i}{k}, ZoneEpochTempEnd{i}{k});
         end
     else
         behavResources(i).ZoneEpochAligned = [];
@@ -721,117 +715,12 @@ for i = 1:length(FilesList)
 end
 clear LinearDistTimeTemp LinearDistDataTemp
 
-% CleanAlignedXtsd
-for i=1:length(FilesList) % tsd of X coordinates
-    if isfield(a{i},'CleanAlignedXtsd')
-        XtsdTimeTemp{i} = Range(a{i}.CleanAlignedXtsd);
-        XtsdDataTemp{i} = Data(a{i}.CleanAlignedXtsd);
-    else
-        XtsdTimeTemp{i} = [];
-    end
-end
-for i=1:(length(FilesList)-1)
-    if ~isempty(XtsdTimeTemp{i+1})
-        XtsdTimeTemp{i+1} = XtsdTimeTemp{i+1}+sum(duration(1:i))*1e4;
-    else
-        XtsdTimeTemp{i+1} = [];
-    end
-end
-for i = 1:length(FilesList)
-    if ~isempty(XtsdTimeTemp{i})
-        behavResources(i).CleanAlignedXtsd = tsd(XtsdTimeTemp{i}, XtsdDataTemp{i});
-    else
-        behavResources(i).CleanAlignedXtsd = [];
-    end
-end
-clear XtsdTimeTemp XtsdDataTemp
-
-% CleanAlignedYtsd
-for i=1:length(FilesList) % tsd of Y coordinates
-    if isfield(a{i},'CleanAlignedYtsd')
-        YtsdTimeTemp{i} = Range(a{i}.CleanAlignedYtsd);
-        YtsdDataTemp{i} = Data(a{i}.CleanAlignedYtsd);
-    else
-        YtsdTimeTemp{i} = [];
-    end
-end
-for i=1:(length(FilesList)-1)
-    if ~isempty(YtsdTimeTemp{i+1})
-        YtsdTimeTemp{i+1} = YtsdTimeTemp{i+1}+sum(duration(1:i))*1e4;
-    else
-        YtsdTimeTemp{i+1} = [];
-    end
-end
-for i = 1:length(FilesList)
-    if ~isempty(YtsdTimeTemp{i})
-        behavResources(i).CleanAlignedYtsd = tsd(YtsdTimeTemp{i}, YtsdDataTemp{i});
-    else
-        behavResources(i).CleanAlignedYtsd = [];
-    end
-end
-clear YtsdTimeTemp YtsdDataTemp
-
-% CleanZoneEpochAligned
-for i=1:length(FilesList) % Epochs when the animals was situated in the Zone
-    if isfield(a{i}, 'CleanZoneEpochAligned')
-        for k = 1:length(a{i}.CleanZoneEpochAligned)
-            ZoneEpochTempStart{i}{k} = Start(a{i}.CleanZoneEpochAligned{k});
-            ZoneEpochTempEnd{i}{k} = End(a{i}.CleanZoneEpochAligned{k});
-        end
-    else
-        ZoneEpochTempStart{i} = [];
-    end
-end
-for i=1:(length(FilesList)-1)
-    if ~isempty (ZoneEpochTempStart{i+1})
-        for k = 1:length(ZoneEpochTempStart{i+1})
-            ZoneEpochTempStart{i+1}{k} = ZoneEpochTempStart{i+1}{k} +sum(duration(1:i))*1e4;
-            ZoneEpochTempEnd{i+1}{k} = ZoneEpochTempEnd{i+1}{k} +sum(duration(1:i))*1e4;
-        end
-    end
-end
-for i=1:length(FilesList)
-    if ~isempty (ZoneEpochTempStart{i})
-        for k = 1:length(a{i}.CleanZoneEpochAligned)
-            behavResources(i).CleanZoneEpochAligned{k} = intervalSet(ZoneEpochTempStart{i}{k}, ZoneEpochTempEnd{i}{k});
-        end
-    else
-        behavResources(i).CleanZoneEpochAligned = [];
-    end
-end
-clear ZoneEpochTempStart ZoneEpochTempEnd ZoneEpochStart ZoneEpochEnd
-
-% CleanLinearDist
-for i=1:length(FilesList) % tsd of X coordinates
-    if isfield(a{i},'CleanLinearDist')
-        LinearDistTimeTemp{i} = Range(a{i}.CleanLinearDist);
-        LinearDistDataTemp{i} = Data(a{i}.CleanLinearDist);
-    else
-        LinearDistTimeTemp{i} = [];
-    end
-end
-for i=1:(length(FilesList)-1)
-    if ~isempty(LinearDistTimeTemp{i+1})
-        LinearDistTimeTemp{i+1} = LinearDistTimeTemp{i+1}+sum(duration(1:i))*1e4;
-    else
-        LinearDistTimeTemp{i+1} = [];
-    end
-end
-for i = 1:length(FilesList)
-    if ~isempty(LinearDistTimeTemp{i})
-        behavResources(i).CleanLinearDist = tsd(LinearDistTimeTemp{i}, LinearDistDataTemp{i});
-    else
-        behavResources(i).CleanLinearDist = [];
-    end
-end
-clear LinearDistTimeTemp LinearDistDataTemp
-
 %% Concatenated tsd and intervalSet variables
 
 %%% OBLIGATORY
-% Concatenate PosMat (type - array)
+% Concatenate PosMat (type - array) 
 for i=1:length(FilesList)
-    PosMatTemp{i} = a{i}.PosMat;
+    PosMatTemp{i} = a{i}.PosMat; 
 end
 for i=1:(length(FilesList)-1)
     PosMatTemp{i+1}(:,1) = PosMatTemp{i+1}(:,1) + (sum(duration(1:i)));
@@ -843,9 +732,9 @@ end
 TimeInSec = PosMat(:,1);
 clear PosMatTemp
 
-% Concatenate PosMatInit (type - array)
+% Concatenate PosMatInit (type - array) 
 for i=1:length(FilesList)
-    PosMatInitTemp{i} = a{i}.PosMatInit;
+    PosMatInitTemp{i} = a{i}.PosMatInit; 
 end
 for i=1:(length(FilesList)-1)
     PosMatInitTemp{i+1}(:,1) = PosMatInitTemp{i+1}(:,1) + (sum(duration(1:i)));
@@ -856,9 +745,9 @@ for i = 2:length(FilesList)
 end
 clear PosMatInitTemp
 
-% Concatenate im_diff (type - array)
+% Concatenate im_diff (type - array) 
 for i=1:length(FilesList)
-    im_diffTemp{i} = a{i}.im_diff;
+    im_diffTemp{i} = a{i}.im_diff; 
 end
 for i=1:(length(FilesList)-1)
     im_diffTemp{i+1}(:,1) = im_diffTemp{i+1}(:,1) + (sum(duration(1:i)));
@@ -869,9 +758,9 @@ for i = 2:length(FilesList)
 end
 clear im_diffTemp
 
-% Concatenate im_diffInit (type - array)
+% Concatenate im_diffInit (type - array) 
 for i=1:length(FilesList)
-    im_diffInitTemp{i} = a{i}.im_diffInit;
+    im_diffInitTemp{i} = a{i}.im_diffInit; 
 end
 for i=1:(length(FilesList)-1)
     im_diffInitTemp{i+1}(:,1) = im_diffInitTemp{i+1}(:,1) + (sum(duration(1:i)));
@@ -898,7 +787,7 @@ for i = 2:length(FilesList)
 end
 
 Imdifftsd = tsd(ImdifftsdTime, ImdifftsdData);
-TimeInTsd = ImdifftsdTime;
+TimeInTsd = ImdifftsdTime; 
 clear ImdifftsdTimeTemp ImdifftsdDataTemp ImdifftsdTime ImdifftsdData
 
 % Concatenate Xtsd (type single tsd)
@@ -966,7 +855,7 @@ clear VtsdTimeTemp VtsdDataTemp VtsdTime VtsdData
 
 %%%%% NON-OBLIGATORY
 
-% Concatenate GotFrame (type - array)
+% Concatenate GotFrame (type - array) 
 for i=1:length(FilesList)
     if isfield(a{i}, 'GotFrame')
         GotFrameTemp{i} = a{i}.GotFrame;
@@ -1167,111 +1056,93 @@ end
 MouseTemp = [MouseTempTime MouseTempData];
 clear MouseTempTime MouseTempData MouseTempTimeTemp MouseTempDataTemp
 
-% Concatenate CleanPosMat (type - array)
-cnt=0;
+% Concatenate CleanPosMat (type - array) 
 for i=1:length(FilesList)
     if isfield(a{i},'CleanPosMat')
         PosMatTemp{i} = a{i}.CleanPosMat;
     else
-        cnt=cnt+1;
         PosMatTemp{i} = [a{i}.PosMat(:,1) nan(length(Range(a{i}.Xtsd)),3)];
     end
 end
-if cnt ~= length(FilesList)
-    for i=1:(length(FilesList)-1)
-        PosMatTemp{i+1}(:,1) = PosMatTemp{i+1}(:,1) + (sum(duration(1:i)));
-    end
-    CleanPosMat = PosMatTemp{1};
-    for i = 2:length(FilesList)
-        CleanPosMat = [CleanPosMat; PosMatTemp{i}];
-    end
-    TimeInSec = CleanPosMat(:,1);
+for i=1:(length(FilesList)-1)
+    PosMatTemp{i+1}(:,1) = PosMatTemp{i+1}(:,1) + (sum(duration(1:i)));
 end
+CleanPosMat = PosMatTemp{1};
+for i = 2:length(FilesList)
+    CleanPosMat = [CleanPosMat; PosMatTemp{i}];
+end
+TimeInSec = CleanPosMat(:,1);
 clear PosMatTemp
 
-% Concatenate CleanPosMatInit (type - array)
-cnt=0;
+% Concatenate CleanPosMatInit (type - array) 
 for i=1:length(FilesList)
     if isfield(a{i},'CleanPosMatInit')
         PosMatTemp{i} = a{i}.CleanPosMatInit;
     else
-        cnt=cnt+1;
         PosMatTemp{i} = [a{i}.PosMat(:,1) nan(length(Range(a{i}.Xtsd)),3)];
     end
 end
-if cnt ~= length(FilesList)
-    for i=1:(length(FilesList)-1)
-        PosMatTemp{i+1}(:,1) = PosMatTemp{i+1}(:,1) + (sum(duration(1:i)));
-    end
-    CleanPosMatInit = PosMatTemp{1};
-    for i = 2:length(FilesList)
-        CleanPosMatInit = [CleanPosMatInit; PosMatTemp{i}];
-    end
-    TimeInSec = CleanPosMatInit(:,1);
+for i=1:(length(FilesList)-1)
+    PosMatTemp{i+1}(:,1) = PosMatTemp{i+1}(:,1) + (sum(duration(1:i)));
 end
+CleanPosMatInit = PosMatTemp{1};
+for i = 2:length(FilesList)
+    CleanPosMatInit = [CleanPosMatInit; PosMatTemp{i}];
+end
+TimeInSec = CleanPosMatInit(:,1);
 clear PosMatTemp
 
 % Concatenate CleanXtsd (type single tsd)
-cnt=0;
 for i=1:length(FilesList)
     if isfield(a{i},'CleanXtsd')
         XtsdTimeTemp{i} = Range(a{i}.CleanXtsd);
         XtsdDataTemp{i} = Data(a{i}.CleanXtsd);
     else
-        cnt=cnt+1;
         XtsdTimeTemp{i} = Range(a{i}.Xtsd);
         XtsdDataTemp{i} = nan(length(XtsdTimeTemp{i}),1);
     end
 end
-if cnt ~= length(FilesList)
-    for i=1:(length(FilesList)-1)
-        XtsdTimeTemp{i+1} = XtsdTimeTemp{i+1}+sum(duration(1:i))*1e4;
-    end
-    XtsdTime = XtsdTimeTemp{1};
-    XtsdData = XtsdDataTemp{1};
-    for i = 2:length(FilesList)
-        XtsdTime = [XtsdTime; XtsdTimeTemp{i}];
-        XtsdData = [XtsdData; XtsdDataTemp{i}];
-    end
-    CleanXtsd = tsd(XtsdTime, XtsdData);
+for i=1:(length(FilesList)-1)
+    XtsdTimeTemp{i+1} = XtsdTimeTemp{i+1}+sum(duration(1:i))*1e4;
 end
+XtsdTime = XtsdTimeTemp{1};
+XtsdData = XtsdDataTemp{1};
+for i = 2:length(FilesList)
+    XtsdTime = [XtsdTime; XtsdTimeTemp{i}];
+    XtsdData = [XtsdData; XtsdDataTemp{i}];
+end
+CleanXtsd = tsd(XtsdTime, XtsdData);
 clear XtsdTimeTemp XtsdDataTemp XtsdTime XtsdData
 
 % Concatenate CleanYtsd (type single tsd)
-cnt=0;
 for i=1:length(FilesList)
     if isfield(a{i},'CleanYtsd')
         YtsdTimeTemp{i} = Range(a{i}.CleanYtsd);
         YtsdDataTemp{i} = Data(a{i}.CleanYtsd);
     else
-        cnt=cnt+1;
         YtsdTimeTemp{i} = Range(a{i}.Ytsd);
         YtsdDataTemp{i} = nan(length(YtsdTimeTemp{i}),1);
     end
 end
-if cnt ~= length(FilesList)
-    for i=1:(length(FilesList)-1)
-        YtsdTimeTemp{i+1} = YtsdTimeTemp{i+1}+sum(duration(1:i))*1e4;
-    end
-    YtsdTime = YtsdTimeTemp{1};
-    YtsdData = YtsdDataTemp{1};
-    for i = 2:length(FilesList)
-        YtsdTime = [YtsdTime; YtsdTimeTemp{i}];
-        YtsdData = [YtsdData; YtsdDataTemp{i}];
-    end
-    CleanYtsd = tsd(YtsdTime, YtsdData);
+for i=1:(length(FilesList)-1)
+    YtsdTimeTemp{i+1} = YtsdTimeTemp{i+1}+sum(duration(1:i))*1e4;
 end
+YtsdTime = YtsdTimeTemp{1};
+YtsdData = YtsdDataTemp{1};
+for i = 2:length(FilesList)
+    YtsdTime = [YtsdTime; YtsdTimeTemp{i}];
+    YtsdData = [YtsdData; YtsdDataTemp{i}];
+end
+CleanYtsd = tsd(YtsdTime, YtsdData);
 clear YtsdTimeTemp YtsdDataTemp YtsdTime YtsdData
 
 % Concatenate CleanVtsd (type single tsd) - describe, plz, what's the trick!!!!
-cnt=0;
 for i=1:length(FilesList)
     if i==length(FilesList)
         if isfield(a{i},'CleanVtsd')
             VtsdTimeTemp{i} = Range(a{i}.CleanVtsd);
             VtsdDataTemp{i} = Data(a{i}.CleanVtsd);
         else
-            cnt=cnt+1;
             temp = Range(a{i}.Xtsd);
             VtsdTimeTemp{i} = temp(1:end-1);
             VtsdDataTemp{i} = nan(length(VtsdTimeTemp{i}),1);
@@ -1281,189 +1152,206 @@ for i=1:length(FilesList)
             VtsdTimeTemp{i} = [Range(a{i}.CleanVtsd); lasttimeBeh(i)];
             VtsdDataTemp{i} = [Data(a{i}.CleanVtsd); -1];
         else
-            cnt=cnt+1;
             VtsdTimeTemp{i} = Range(a{i}.Xtsd);
             VtsdDataTemp{i} = nan(length(VtsdTimeTemp{i}),1);
         end
     end
 end
-if cnt ~= length(FilesList)
-    for i=1:(length(FilesList)-1)
-        VtsdTimeTemp{i+1} = VtsdTimeTemp{i+1}+sum(duration(1:i))*1e4;
-    end
-    VtsdTime = VtsdTimeTemp{1};
-    VtsdData = VtsdDataTemp{1};
-    for i = 2:length(FilesList)
-        VtsdTime = [VtsdTime; VtsdTimeTemp{i}];
-        VtsdData = [VtsdData; VtsdDataTemp{i}];
-    end
-    CleanVtsd = tsd(VtsdTime, VtsdData);
+for i=1:(length(FilesList)-1)
+    VtsdTimeTemp{i+1} = VtsdTimeTemp{i+1}+sum(duration(1:i))*1e4;
 end
+VtsdTime = VtsdTimeTemp{1};
+VtsdData = VtsdDataTemp{1};
+for i = 2:length(FilesList)
+    VtsdTime = [VtsdTime; VtsdTimeTemp{i}];
+    VtsdData = [VtsdData; VtsdDataTemp{i}];
+end
+CleanVtsd = tsd(VtsdTime, VtsdData);
 clear VtsdTimeTemp VtsdDataTemp VtsdTime VtsdData temp
 
 if exist('DoZones','var')
     if DoZones
-        % Concatenate CleanZoneEpoch (type single tsa)
-        cnt=0;
+        % Concatenate ZoneEpoch (type single tsa)
+        for i=1:length(FilesList) % Epochs when the animals was situated in the Zone
+            if isfield(a{i}, 'CleanXtsd') && isfield(a{i}, 'ZoneEpoch')
+                Xtemp=Data(a{i}.CleanXtsd);
+                T1=Range(a{i}.CleanXtsd);
+                XXX = floor(Data(a{i}.CleanXtsd)*a{i}.Ratio_IMAonREAL);
+                XXX(find(isnan(XXX))) = 240;
+                YYY = floor(Data(a{i}.CleanYtsd)*a{i}.Ratio_IMAonREAL);
+                YYY(find(isnan(YYY))) = 320;
+                for k = 1:length(a{i}.ZoneEpoch)
+                    ZoneIndicesTemp{i}{k}=find(diag(a{i}.Zone{k}(XXX,YYY)));
+                    Xtemp2=Xtemp*0;
+                    Xtemp2(ZoneIndicesTemp{i}{k})=1;
+                    CleanZoneEpochTTT{i}{k}=thresholdIntervals(tsd(T1,Xtemp2),0.5,'Direction','Above');
+                end
+            else
+                ZoneEpochTempStart{i} = [];
+            end
+        end
+        
         for i=1:length(FilesList)
-            if isfield(a{i}, 'CleanZoneEpoch')
+            if isfield(a{i}, 'CleanXtsd') && isfield(a{i}, 'ZoneEpoch')
                 if isfield(a{i}, 'ZoneLabels')
                     ZoneEpochTempStart{i} = cell(1,length(ZoneNames));
                     ZoneEpochTempEnd{i} = cell(1,length(ZoneNames));
-                    for k = 1:length(a{i}.CleanZoneEpoch)
+                    for k = 1:length(a{i}.ZoneEpoch)
                         idx_Zone = find(strcmp(a{i}.ZoneLabels{k}, ZoneNames));
-                        ZoneEpochTempStart{i}{idx_Zone} = Start(a{i}.CleanZoneEpoch{k});
-                        ZoneEpochTempEnd{i}{idx_Zone} = End(a{i}.CleanZoneEpoch{k});
+                        ZoneEpochTempStart{i}{idx_Zone} = Start(CleanZoneEpochTTT{i}{k});
+                        ZoneEpochTempEnd{i}{idx_Zone} = End(CleanZoneEpochTTT{i}{k});
                     end
                 end
             else
-                cnt=cnt+1;
                 ZoneEpochTempStart{i} = [];
                 ZoneEpochTempEnd{i} = [];
             end
         end
-        if cnt ~= length(FilesList)
-            for i=1:(length(FilesList)-1)
-                if ~isempty (ZoneEpochTempStart{i+1})
-                    for k = 1:length(ZoneNames)
-                        ZoneEpochTempStart{i+1}{k} = ZoneEpochTempStart{i+1}{k} +sum(duration(1:i))*1e4;
-                        ZoneEpochTempEnd{i+1}{k} = ZoneEpochTempEnd{i+1}{k} +sum(duration(1:i))*1e4;
-                    end
+        for i=1:(length(FilesList)-1)
+            if ~isempty (ZoneEpochTempStart{i+1})
+                for k = 1:length(ZoneNames)
+                    ZoneEpochTempStart{i+1}{k} = ZoneEpochTempStart{i+1}{k} +sum(duration(1:i))*1e4;
+                    ZoneEpochTempEnd{i+1}{k} = ZoneEpochTempEnd{i+1}{k} +sum(duration(1:i))*1e4;
                 end
             end
-            for k=1:length(ZoneNames)
-                if ~isempty(ZoneEpochTempStart{1})
-                    if ~isempty(ZoneEpochTempStart{1}{k})
-                        ZoneEpochStart{k} = ZoneEpochTempStart{1}{k};
-                        ZoneEpochEnd{k} = ZoneEpochTempEnd{1}{k};
-                    else
-                        ZoneEpochStart{k} = [];
-                        ZoneEpochEnd{k} = [];
-                    end
+        end
+        for k=1:length(ZoneNames)
+            if ~isempty(ZoneEpochTempStart{1})
+                if ~isempty(ZoneEpochTempStart{1}{k})
+                    ZoneEpochStart{k} = ZoneEpochTempStart{1}{k};
+                    ZoneEpochEnd{k} = ZoneEpochTempEnd{1}{k};
                 else
                     ZoneEpochStart{k} = [];
                     ZoneEpochEnd{k} = [];
                 end
-            end
-            for i=2:length(FilesList)
-                for k = 1:length(ZoneNames)
-                    if ~isempty(ZoneEpochTempStart{i})
-                        ZoneEpochStart{k} = [ZoneEpochStart{k}; ZoneEpochTempStart{i}{k}];
-                        ZoneEpochEnd{k} = [ZoneEpochEnd{k}; ZoneEpochTempEnd{i}{k}];
-                    end
-                end
-            end
-            for i=1:length(ZoneNames)
-                CleanZoneEpoch.(ZoneNames{i}) = intervalSet(ZoneEpochStart{i}, ZoneEpochEnd{i});
+            else
+                ZoneEpochStart{k} = [];
+                ZoneEpochEnd{k} = [];
             end
         end
-        clear idx_Zone ZoneEpochTempStart ZoneEpochTempEnd ZoneEpochStart ZoneEpochEnd
+        for i=2:length(FilesList)
+            for k = 1:length(ZoneNames)
+                if ~isempty(ZoneEpochTempStart{i})
+                    ZoneEpochStart{k} = [ZoneEpochStart{k}; ZoneEpochTempStart{i}{k}];
+                    ZoneEpochEnd{k} = [ZoneEpochEnd{k}; ZoneEpochTempEnd{i}{k}];
+                end
+            end
+        end
+        for i=1:length(ZoneNames)
+            CleanZoneEpoch.(ZoneNames{i}) = intervalSet(ZoneEpochStart{i}, ZoneEpochEnd{i});
+        end
+        clear idx_Zone ZoneEpochTempStart ZoneEpochTempEnd ZoneEpochStart ZoneEpochEnd Xtemp Xtemp2 T1 XXX YYY CleanZoneEpochTTT
         
         % Concatenate ZoneIndices (type array of indices * 7 - number of Zones)
-        cnt=0;
-        for i=1:length(FilesList)
-            if isfield(a{i}, 'CleanZoneIndices')
-                ZoneIndicesTemp{i} = cell(1,length(ZoneNames));
-                for k = 1:length(a{i}.CleanZoneIndices)
-                    idx_Zone = find(strcmp(a{i}.ZoneLabels{k}, ZoneNames));
-                    ZoneIndicesTemp{i}{idx_Zone} = a{i}.CleanZoneIndices{k};
+        for i=1:length(FilesList) % Time indices of the occasions when the animal was in the Zone
+            if isfield(a{i}, 'CleanXtsd') && isfield(a{i}, 'ZoneIndices')
+                XXX = floor(Data(a{i}.CleanXtsd)*a{i}.Ratio_IMAonREAL);
+                XXX(find(isnan(XXX))) = 240;
+                YYY = floor(Data(a{i}.CleanYtsd)*a{i}.Ratio_IMAonREAL);
+                YYY(find(isnan(YYY))) = 320;
+                for k = 1:length(a{i}.ZoneIndices)
+                    CleanZoneIndicesTTT{i}{k}=find(diag(a{i}.Zone{k}(XXX,YYY)));
                 end
             else
-                cnt=cnt+1;
+                CleanZoneIndicesTTT{i} = [];
+            end
+        end
+        
+        for i=1:length(FilesList)
+            if isfield(a{i}, 'ZoneIndices')
+                ZoneIndicesTemp{i} = cell(1,length(ZoneNames));
+                if ~isempty(CleanZoneIndicesTTT{i})
+                    for k = 1:length(a{i}.ZoneIndices)
+                        idx_Zone = find(strcmp(a{i}.ZoneLabels{k}, ZoneNames));
+                        ZoneIndicesTemp{i}{idx_Zone} = CleanZoneIndicesTTT{i}{k};
+                    end
+                else
+                    ZoneIndicesTemp{i} = [];
+                end
+            else
                 ZoneIndicesTemp{i} = [];
             end
         end
-        if cnt ~= length(FilesList)
-            for i=1:(length(FilesList)-1)
-                if ~isempty (ZoneIndicesTemp{i+1})
-                    for k = 1:length(ZoneNames)
-                        ZoneIndicesTemp{i+1}{k} = ZoneIndicesTemp{i+1}{k} + sum(lind(1:i));
-                    end
+        for i=1:(length(FilesList)-1)
+            if ~isempty (ZoneIndicesTemp{i+1})
+                for k = 1:length(ZoneNames)
+                    ZoneIndicesTemp{i+1}{k} = ZoneIndicesTemp{i+1}{k} + sum(lind(1:i));
                 end
             end
-            for k=1:length(ZoneNames)
-                if ~isempty(ZoneIndicesTemp{1})
-                    if ~isempty(ZoneIndicesTemp{1}{k})
-                        ZoneIndicesNew{k} = ZoneIndicesTemp{1}{k};
-                    else
-                        ZoneIndicesNew{k} = [];
-                    end
+        end
+        for k=1:length(ZoneNames)
+            if ~isempty(ZoneIndicesTemp{1})
+                if ~isempty(ZoneIndicesTemp{1}{k})
+                    ZoneIndicesNew{k} = ZoneIndicesTemp{1}{k};
                 else
                     ZoneIndicesNew{k} = [];
                 end
-            end
-            for i=2:length(FilesList)
-                for k = 1:length(ZoneNames)
-                    if ~isempty(ZoneIndicesTemp{i})
-                        ZoneIndicesNew{k} = [ZoneIndicesNew{k}; ZoneIndicesTemp{i}{k}];
-                    end
-                end
-            end
-            for i=1:length(ZoneNames)
-                CleanZoneIndices.(ZoneNames{i}) = ZoneIndicesNew{i};
+            else
+                ZoneIndicesNew{k} = [];
             end
         end
-        clear idx_Zone ZoneIndicesTemp ZoneIndicesNew
+        for i=2:length(FilesList)
+            for k = 1:length(ZoneNames)
+                if ~isempty(ZoneIndicesTemp{i})
+                    ZoneIndicesNew{k} = [ZoneIndicesNew{k}; ZoneIndicesTemp{i}{k}];
+                end
+            end
+        end
+        for i=1:length(ZoneNames)
+            CleanZoneIndices.(ZoneNames{i}) = ZoneIndicesNew{i};
+        end
+        clear idx_Zone ZoneIndicesTemp ZoneIndicesNew XXX YYY CleanZoneIndicesTTT
     end
 end
 
-% Concatenate AlignedXtsd (type single tsd)
-cnt=0;
+% Concatenate Xtsd (type single tsd)
 for i=1:length(FilesList)
     if isfield(a{i},'AlignedXtsd')
         XtsdTimeTemp{i} = Range(a{i}.AlignedXtsd);
         XtsdDataTemp{i} = Data(a{i}.AlignedXtsd);
     else
-        cnt=cnt+1;
         XtsdTimeTemp{i} = Range(a{i}.Xtsd);
         XtsdDataTemp{i} = nan(length(XtsdTimeTemp{i}),1);
     end
 end
-if cnt ~= length(FilesList)
-    for i=1:(length(FilesList)-1)
-        XtsdTimeTemp{i+1} = XtsdTimeTemp{i+1}+sum(duration(1:i))*1e4;
-    end
-    XtsdTime = XtsdTimeTemp{1};
-    XtsdData = XtsdDataTemp{1};
-    for i = 2:length(FilesList)
-        XtsdTime = [XtsdTime; XtsdTimeTemp{i}];
-        XtsdData = [XtsdData; XtsdDataTemp{i}];
-    end
-    AlignedXtsd = tsd(XtsdTime, XtsdData);
+for i=1:(length(FilesList)-1)
+    XtsdTimeTemp{i+1} = XtsdTimeTemp{i+1}+sum(duration(1:i))*1e4;
 end
+XtsdTime = XtsdTimeTemp{1};
+XtsdData = XtsdDataTemp{1};
+for i = 2:length(FilesList)
+    XtsdTime = [XtsdTime; XtsdTimeTemp{i}];
+    XtsdData = [XtsdData; XtsdDataTemp{i}];
+end
+AlignedXtsd = tsd(XtsdTime, XtsdData);
 clear XtsdTimeTemp XtsdDataTemp XtsdTime XtsdData
 
 
-% Concatenate AlignedYtsd (type single tsd)
-cnt=0;
+% Concatenate Ytsd (type single tsd)
 for i=1:length(FilesList)
     if isfield(a{i},'AlignedYtsd')
         YtsdTimeTemp{i} = Range(a{i}.AlignedYtsd);
         YtsdDataTemp{i} = Data(a{i}.AlignedYtsd);
     else
-        cnt=cnt+1;
         YtsdTimeTemp{i} = Range(a{i}.Xtsd);
         YtsdDataTemp{i} = nan(length(YtsdTimeTemp{i}),1);
     end
 end
-if cnt ~= length(FilesList)
-    for i=1:(length(FilesList)-1)
-        YtsdTimeTemp{i+1} = YtsdTimeTemp{i+1}+sum(duration(1:i))*1e4;
-    end
-    YtsdTime = YtsdTimeTemp{1};
-    YtsdData = YtsdDataTemp{1};
-    for i = 2:length(FilesList)
-        YtsdTime = [YtsdTime; YtsdTimeTemp{i}];
-        YtsdData = [YtsdData; YtsdDataTemp{i}];
-    end
-    AlignedYtsd = tsd(YtsdTime, YtsdData);
+for i=1:(length(FilesList)-1)
+    YtsdTimeTemp{i+1} = YtsdTimeTemp{i+1}+sum(duration(1:i))*1e4;
 end
+YtsdTime = YtsdTimeTemp{1};
+YtsdData = YtsdDataTemp{1};
+for i = 2:length(FilesList)
+    YtsdTime = [YtsdTime; YtsdTimeTemp{i}];
+    YtsdData = [YtsdData; YtsdDataTemp{i}];
+end
+AlignedYtsd = tsd(YtsdTime, YtsdData);
 clear YtsdTimeTemp YtsdDataTemp YtsdTime YtsdData
 
 if exist('DoZones','var')
     if DoZones
         % Concatenate ZoneEpochAligned (type single tsa)
-        cnt=0;
         for i=1:length(FilesList)
             if isfield(a{i}, 'ZoneEpochAligned')
                 if isfield(a{i}, 'ZoneLabels')
@@ -1476,45 +1364,42 @@ if exist('DoZones','var')
                     end
                 end
             else
-                cnt=cnt+1;
                 ZoneEpochTempStart{i} = [];
                 ZoneEpochTempEnd{i} = [];
             end
         end
-        if cnt ~= length(FilesList)
-            for i=1:(length(FilesList)-1)
-                if ~isempty (ZoneEpochTempStart{i+1})
-                    for k = 1:length(ZoneEpochTempStart{i+1})
-                        ZoneEpochTempStart{i+1}{k} = ZoneEpochTempStart{i+1}{k} +sum(duration(1:i))*1e4;
-                        ZoneEpochTempEnd{i+1}{k} = ZoneEpochTempEnd{i+1}{k} +sum(duration(1:i))*1e4;
-                    end
+        for i=1:(length(FilesList)-1)
+            if ~isempty (ZoneEpochTempStart{i+1})
+                for k = 1:length(ZoneEpochTempStart{i+1})
+                    ZoneEpochTempStart{i+1}{k} = ZoneEpochTempStart{i+1}{k} +sum(duration(1:i))*1e4;
+                    ZoneEpochTempEnd{i+1}{k} = ZoneEpochTempEnd{i+1}{k} +sum(duration(1:i))*1e4;
                 end
             end
-            for k=1:length(ZoneNames)
-                if ~isempty(ZoneEpochTempStart{1})
-                    if ~isempty(ZoneEpochTempStart{1}{k})
-                        ZoneEpochStart{k} = ZoneEpochTempStart{1}{k};
-                        ZoneEpochEnd{k} = ZoneEpochTempEnd{1}{k};
-                    else
-                        ZoneEpochStart{k} = [];
-                        ZoneEpochEnd{k} = [];
-                    end
+        end
+        for k=1:length(ZoneNames)
+            if ~isempty(ZoneEpochTempStart{1})
+                if ~isempty(ZoneEpochTempStart{1}{k})
+                    ZoneEpochStart{k} = ZoneEpochTempStart{1}{k};
+                    ZoneEpochEnd{k} = ZoneEpochTempEnd{1}{k};
                 else
                     ZoneEpochStart{k} = [];
                     ZoneEpochEnd{k} = [];
                 end
+            else
+                ZoneEpochStart{k} = [];
+                ZoneEpochEnd{k} = [];
             end
-            for i=2:length(FilesList)
-                for k = 1:length(ZoneNames)
-                    if ~isempty(ZoneEpochTempStart{i})
-                        ZoneEpochStart{k} = [ZoneEpochStart{k}; ZoneEpochTempStart{i}{k}];
-                        ZoneEpochEnd{k} = [ZoneEpochEnd{k}; ZoneEpochTempEnd{i}{k}];
-                    end
+        end
+        for i=2:length(FilesList)
+            for k = 1:length(ZoneNames)
+                if ~isempty(ZoneEpochTempStart{i})
+                    ZoneEpochStart{k} = [ZoneEpochStart{k}; ZoneEpochTempStart{i}{k}];
+                    ZoneEpochEnd{k} = [ZoneEpochEnd{k}; ZoneEpochTempEnd{i}{k}];
                 end
             end
-            for i=1:length(ZoneNames)
-                ZoneEpochAligned.(ZoneNames{i}) = intervalSet(ZoneEpochStart{i}, ZoneEpochEnd{i});
-            end
+        end
+        for i=1:length(ZoneNames)
+            ZoneEpochAligned.(ZoneNames{i}) = intervalSet(ZoneEpochStart{i}, ZoneEpochEnd{i});
         end
         clear idx_Zone ZoneEpochTempStart ZoneEpochTempEnd ZoneEpochStart ZoneEpochEnd
     end
@@ -1542,149 +1427,10 @@ end
 LinearDist = tsd(LinearDistTime, LinearDistData);
 clear LinearDistTimeTemp LinearDistDataTemp LinearDistTime LinearDistData
 
-% Concatenate CleanAlignedXtsd (type single tsd)
-cnt=0;
-for i=1:length(FilesList)
-    if isfield(a{i},'CleanAlignedXtsd')
-        XtsdTimeTemp{i} = Range(a{i}.CleanAlignedXtsd);
-        XtsdDataTemp{i} = Data(a{i}.CleanAlignedXtsd);
-    else
-        cnt=cnt+1;
-        XtsdTimeTemp{i} = Range(a{i}.Xtsd);
-        XtsdDataTemp{i} = nan(length(XtsdTimeTemp{i}),1);
-    end
-end
-if cnt ~= length(FilesList)
-    for i=1:(length(FilesList)-1)
-        XtsdTimeTemp{i+1} = XtsdTimeTemp{i+1}+sum(duration(1:i))*1e4;
-    end
-    XtsdTime = XtsdTimeTemp{1};
-    XtsdData = XtsdDataTemp{1};
-    for i = 2:length(FilesList)
-        XtsdTime = [XtsdTime; XtsdTimeTemp{i}];
-        XtsdData = [XtsdData; XtsdDataTemp{i}];
-    end
-    CleanAlignedXtsd = tsd(XtsdTime, XtsdData);
-end
-clear XtsdTimeTemp XtsdDataTemp XtsdTime XtsdData
-
-
-% Concatenate CleanAlignedYtsd (type single tsd)
-cnt=0;
-for i=1:length(FilesList)
-    if isfield(a{i},'CleanAlignedYtsd')
-        YtsdTimeTemp{i} = Range(a{i}.CleanAlignedYtsd);
-        YtsdDataTemp{i} = Data(a{i}.CleanAlignedYtsd);
-    else
-        cnt=cnt+1;
-        YtsdTimeTemp{i} = Range(a{i}.Xtsd);
-        YtsdDataTemp{i} = nan(length(YtsdTimeTemp{i}),1);
-    end
-end
-if cnt ~= length(FilesList)
-    for i=1:(length(FilesList)-1)
-        YtsdTimeTemp{i+1} = YtsdTimeTemp{i+1}+sum(duration(1:i))*1e4;
-    end
-    YtsdTime = YtsdTimeTemp{1};
-    YtsdData = YtsdDataTemp{1};
-    for i = 2:length(FilesList)
-        YtsdTime = [YtsdTime; YtsdTimeTemp{i}];
-        YtsdData = [YtsdData; YtsdDataTemp{i}];
-    end
-    CleanAlignedYtsd = tsd(YtsdTime, YtsdData);
-end
-clear YtsdTimeTemp YtsdDataTemp YtsdTime YtsdData
-
-if exist('DoZones','var')
-    if DoZones
-        % Concatenate CleanZoneEpochAligned (type single tsa)
-        cnt=0;
-        for i=1:length(FilesList)
-            if isfield(a{i}, 'CleanZoneEpochAligned')
-                if isfield(a{i}, 'ZoneLabels')
-                    ZoneEpochTempStart{i} = cell(1,length(ZoneNames));
-                    ZoneEpochTempEnd{i} = cell(1,length(ZoneNames));
-                    for k = 1:length(a{i}.CleanZoneEpochAligned)
-                        idx_Zone = find(strcmp(a{i}.ZoneLabels{k}, ZoneNames));
-                        ZoneEpochTempStart{i}{idx_Zone} = Start(a{i}.CleanZoneEpochAligned{k});
-                        ZoneEpochTempEnd{i}{idx_Zone} = End(a{i}.CleanZoneEpochAligned{k});
-                    end
-                end
-            else
-                cnt=cnt+1;
-                ZoneEpochTempStart{i} = [];
-                ZoneEpochTempEnd{i} = [];
-            end
-        end
-        if cnt ~= length(FilesList)
-            for i=1:(length(FilesList)-1)
-                if ~isempty (ZoneEpochTempStart{i+1})
-                    for k = 1:length(ZoneEpochTempStart{i+1})
-                        ZoneEpochTempStart{i+1}{k} = ZoneEpochTempStart{i+1}{k} +sum(duration(1:i))*1e4;
-                        ZoneEpochTempEnd{i+1}{k} = ZoneEpochTempEnd{i+1}{k} +sum(duration(1:i))*1e4;
-                    end
-                end
-            end
-            for k=1:length(ZoneNames)
-                if ~isempty(ZoneEpochTempStart{1})
-                    if ~isempty(ZoneEpochTempStart{1}{k})
-                        ZoneEpochStart{k} = ZoneEpochTempStart{1}{k};
-                        ZoneEpochEnd{k} = ZoneEpochTempEnd{1}{k};
-                    else
-                        ZoneEpochStart{k} = [];
-                        ZoneEpochEnd{k} = [];
-                    end
-                else
-                    ZoneEpochStart{k} = [];
-                    ZoneEpochEnd{k} = [];
-                end
-            end
-            for i=2:length(FilesList)
-                for k = 1:length(ZoneNames)
-                    if ~isempty(ZoneEpochTempStart{i})
-                        ZoneEpochStart{k} = [ZoneEpochStart{k}; ZoneEpochTempStart{i}{k}];
-                        ZoneEpochEnd{k} = [ZoneEpochEnd{k}; ZoneEpochTempEnd{i}{k}];
-                    end
-                end
-            end
-            for i=1:length(ZoneNames)
-                CleanZoneEpochAligned.(ZoneNames{i}) = intervalSet(ZoneEpochStart{i}, ZoneEpochEnd{i});
-            end
-        end
-        clear idx_Zone ZoneEpochTempStart ZoneEpochTempEnd ZoneEpochStart ZoneEpochEnd
-    end
-end
-
-% Concatenate LinearDist (type single tsd)
-cnt=0;
-for i=1:length(FilesList)
-    if isfield(a{i},'CleanLinearDist')
-        LinearDistTimeTemp{i} = Range(a{i}.CleanLinearDist);
-        LinearDistDataTemp{i} = Data(a{i}.CleanLinearDist);
-    else
-        cnt=cnt+1;
-        LinearDistTimeTemp{i} = Range(a{i}.Xtsd);
-        LinearDistDataTemp{i} = nan(length(LinearDistTimeTemp{i}),1);
-    end
-end
-if cnt ~= length(FilesList)
-    for i=1:(length(FilesList)-1)
-        LinearDistTimeTemp{i+1} = LinearDistTimeTemp{i+1}+sum(duration(1:i))*1e4;
-    end
-    LinearDistTime = LinearDistTimeTemp{1};
-    LinearDistData = LinearDistDataTemp{1};
-    for i = 2:length(FilesList)
-        LinearDistTime = [LinearDistTime; LinearDistTimeTemp{i}];
-        LinearDistData = [LinearDistData; LinearDistDataTemp{i}];
-    end
-    CleanLinearDist = tsd(LinearDistTime, LinearDistData);
-end
-clear LinearDistTimeTemp LinearDistDataTemp LinearDistTime LinearDistData
 
 
 %% Clear temporary variables
 clear a duration FilesList i indir k lasttime lasttimeTemp lind lindTemp offset offsetTemp TimeinSec TimeinTsd
-clear beg_end DoZones en lasttimebeh varargin
 
 %% Save common variables
 if ~exist([pathtosave 'behavResources.mat'], 'file')
@@ -1704,13 +1450,13 @@ else
     end
     if exist('ZoneIndices', 'var')
         save([pathtosave 'behavResources.mat'], 'ZoneIndices', '-append');
-    end
+    end 
     if exist('ZoneEpoch', 'var')
         save([pathtosave 'behavResources.mat'], 'ZoneEpoch', '-append');
-    end
+    end 
     if exist('FreezeEpoch', 'var')
         save([pathtosave 'behavResources.mat'], 'FreezeEpoch', '-append');
-    end
+    end 
     if exist('CleanPosMat', 'var')
         save([pathtosave 'behavResources.mat'], 'CleanPosMat', '-append');
     end
@@ -1743,18 +1489,6 @@ else
     end
     if exist('ZoneEpochAligned', 'var')
         save([pathtosave 'behavResources.mat'], 'ZoneEpochAligned', '-append');
-    end
-    if exist('CleanAlignedXtsd', 'var')
-        save([pathtosave 'behavResources.mat'], 'CleanAlignedXtsd', '-append');
-    end
-    if exist('CleanAlignedYtsd', 'var')
-        save([pathtosave 'behavResources.mat'], 'CleanAlignedYtsd', '-append');
-    end
-    if exist('CleanLinearDist', 'var')
-        save([pathtosave 'behavResources.mat'], 'CleanLinearDist', '-append');
-    end
-    if exist('CleanZoneEpochAligned', 'var')
-        save([pathtosave 'behavResources.mat'], 'CleanZoneEpochAligned', '-append');
     end
 end
 

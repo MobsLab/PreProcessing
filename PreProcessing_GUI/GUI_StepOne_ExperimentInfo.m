@@ -1,5 +1,5 @@
 function varargout = GUI_StepOne_ExperimentInfo(varargin)
-% GUI_STEPONE_EXPERIMENTINFO MATLAB code for GUI_StepOne_ExperimentInfo.fig
+% GUI_STEPONE_EXPERIMENTINFO MATLAB code for GUI_StepOne_ExperimentInfo.fig % 
 %      GUI_STEPONE_EXPERIMENTINFO, by itself, creates a new GUI_STEPONE_EXPERIMENTINFO or raises the existing
 %      singleton*.
 %
@@ -92,7 +92,7 @@ handles.minuteDrug2 = [];
 handles.TrackStimSession = [];
 
 % initialize ExpeInfo if it does not already exist
-if isfile('ExpeInfo.mat')==1
+if exist('ExpeInfo.mat')==2
     load('ExpeInfo.mat')
     handles.ExpeInfo = ExpeInfo;
     handles = FillInSlotsWithExpeInfo(handles);
@@ -143,11 +143,6 @@ TempData.ExpeInfo.nmouse = eval(get(hObject,'String'));
 guidata(hObject,TempData)
 set(handles.Mouse_Strain_List,'Enable','On')
 set(handles.MouseNum_Edit,'BackgroundColor',[0.8 0.4 0.2])
-
-function DataHardDrive_Edit_Callback(hObject, eventdata, handles)
-TempData = guidata(hObject);
-TempData.ExpeInfo.harddrive = eval(get(hObject,'String'));
-guidata(hObject,TempData)
 
 
 % Mouse strain
@@ -1007,12 +1002,12 @@ if isfield(handles.ExpeInfo,'ElecStimInfo')
     end
     
     if isfield(handles.ExpeInfo.ElecStimInfo,'ElecStimIntensity1')
-        set(handles.Stim1_Intensity_Edit,'String',num2str(handles.ExpeInfo.ElecStimInfo.ElecStimIntensity1))
+        set(handles.Stim1_Intensity_Edit,'String',num2str(ExpeInfo.ElecStimInfo.ElecStimIntensity1))
         set(handles.Stim1_Intensity_Edit,'BackgroundColor',[0.8 0.4 0.2])
     end
     
     if isfield(handles.ExpeInfo.ElecStimInfo,'ElecStimIntensity2')
-        set(handles.Stim2_Intensity_Edit,'String',num2str(handles.ExpeInfo.ElecStimInfo.ElecStimIntensity2))
+        set(handles.Stim2_Intensity_Edit,'String',num2str(ExpeInfo.ElecStimInfo.ElecStimIntensity2))
         set(handles.Stim2_Intensity_Edit,'BackgroundColor',[0.8 0.4 0.2])
     end
     

@@ -46,7 +46,7 @@ switch ExpeInfo.PreProcessingInfo.IsThereEphys
                 
                 %% Make TTLInfo
                 TTLInfo_sess{f} = MakeData_TTLInfo_OpenEphys([ExpeInfo.PreProcessingInfo.FolderForConcatenation_Ephys{f}(1:out_ind-1) ...
-                    'events/Rhythm_FPGA-100.0_TTL_1.mat'],StartFile.folder,ExpeInfo.PreProcessingInfo.FolderForConcatenation_Ephys{f}(1:out_ind-1),...
+                    'events/Rhythm_FPGA-100.0_TTL_1.mat'],ExpeInfo.PreProcessingInfo.FolderForConcatenation_Ephys{f}(1:out_ind-1),...
                     ExpeInfo);
 
                 %% here is the place where we check if the ephys is the right length comapred to the behav resources - to do
@@ -228,7 +228,7 @@ switch ExpeInfo.PreProcessingInfo.IsThereEphys
         
         %% run the makeData scripts
         SetCurrentSession([BaseFileName '.xml'])
-        SessLength = MakeData_LFP(FinalFolder);
+        SessLength = MakeData_LFP_PluggedOnly(FinalFolder,ExpeInfo);
         
         % This is SUPER dirty!! DO it again Sophie!!
         if length(ExpeInfo.PreProcessingInfo.FolderForConcatenation_Ephys)==1
@@ -264,33 +264,35 @@ switch ExpeInfo.PreProcessingInfo.IsThereEphys
         duration = duration*1e4;
         
         % Concatenation of single session TTLs
-        if length(TTLInfo_sess) == 1
-            TTLInfo = TTLInfo_sess{1};
-            StimEpoch = TTLInfo_sess{1}.StimEpoch;
-        else
-            TTLInfo.StartSession = TTLInfo_sess{1}.StartSession;
-            TTLInfo.StopSession = TTLInfo_sess{end}.StopSession;
-            % StimEpoch
-            Stim = cell(length(TTLInfo_sess),1);
-            for ittl = 1:length(TTLInfo_sess)
-                Stim{ittl} = Start(TTLInfo_sess{ittl}.StimEpoch);
+        if isempty(TTLInfo_sess{1}.StopSession) % add by BM on 01/05/2022 when we don't have TTL
+            if length(TTLInfo_sess) == 1
+                TTLInfo = TTLInfo_sess{1};
+                StimEpoch = TTLInfo_sess{1}.StimEpoch;
+            else
+                TTLInfo.StartSession = TTLInfo_sess{1}.StartSession;
+                TTLInfo.StopSession = TTLInfo_sess{end}.StopSession;
+                % StimEpoch
+                Stim = cell(length(TTLInfo_sess),1);
+                for ittl = 1:length(TTLInfo_sess)
+                    Stim{ittl} = Start(TTLInfo_sess{ittl}.StimEpoch);
+                end
+                for ittl=1:(length(TTLInfo_sess)-1)
+                    Stim{ittl+1} = Stim{ittl+1} + (sum(duration(1:ittl)));
+                end
+                StimTime = Stim{1};
+                for ittl = 2:length(TTLInfo_sess)
+                    StimTime = [StimTime; Stim{ittl}];
+                end
+                TTLInfo.StimEpoch = intervalSet(StimTime, StimTime);
+                StimEpoch = TTLInfo.StimEpoch;
+                clear Stim Stimtime
             end
-            for ittl=1:(length(TTLInfo_sess)-1)
-                Stim{ittl+1} = Stim{ittl+1} + (sum(duration(1:ittl)));
+            save('behavResources.mat','TTLInfo','-append')
+            if exist('StimEpoch')>0
+                save('behavResources.mat','StimEpoch','-append')
             end
-            StimTime = Stim{1};
-            for ittl = 2:length(TTLInfo_sess)
-                StimTime = [StimTime; Stim{ittl}];
-            end
-            TTLInfo.StimEpoch = intervalSet(StimTime, StimTime);
-            StimEpoch = TTLInfo.StimEpoch;
-            clear Stim Stimtime
         end
-        save('behavResources.mat','TTLInfo','-append')
-        if exist('StimEpoch')>0
-            save('behavResources.mat','StimEpoch','-append')
-        end
-        
+
         %% if there are spikes
         if ExpeInfo.PreProcessingInfo.DoSpikes
             
@@ -354,7 +356,7 @@ switch ExpeInfo.PreProcessingInfo.IsThereEphys
                         ExpeInfo.PreProcessingInfo.StimDur);
                     
                     % Remove spikes
-                    RemoveArtefactualSpikes(FinalFolder, CleanEpoch);
+                    RemoveArtefactualSpikes(FinalFolder, CleanEpoch, [BaseFileName '_SpikeRef']);
                     
                 end
                 
@@ -378,7 +380,7 @@ switch ExpeInfo.PreProcessingInfo.IsThereEphys
                         ExpeInfo.PreProcessingInfo.StimDur);
                     
                     % Remove spikes
-                    RemoveArtefactualSpikes(FinalFolder, CleanEpoch);
+                    RemoveArtefactualSpikes(FinalFolder, CleanEpoch, BaseFileName);
                     
                 end
                 
