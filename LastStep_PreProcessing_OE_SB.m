@@ -60,12 +60,7 @@ switch ExpeInfo.PreProcessingInfo.IsThereEphys
                 
                    TTLInfo_sess{f} = MakeData_TTLInfo_OpenEphys(ExpeInfo.PreProcessingInfo.FolderForConcatenation_Ephys{f}(1:out_ind-1),...
                     ExpeInfo);
-                   TTLInfo = TTLInfo_sess{f};
-                   if not(exist([FinalFolder filesep 'behavResources.mat']))
-                       save([FinalFolder filesep 'behavResources.mat'],'TTLInfo')
-                   else
-                       save([FinalFolder filesep 'behavResources.mat'],'TTLInfo','-append')
-                   end
+
 
                 cd(ExpeInfo.PreProcessingInfo.FolderForConcatenation_Ephys{f})
 
@@ -145,11 +140,7 @@ switch ExpeInfo.PreProcessingInfo.IsThereEphys
                 %% Make TTLInfo
                 TTLInfo_sess{f} = GetTTLTimesInd_Intan(ExpeInfo.PreProcessingInfo.FolderForConcatenation_Ephys{f},...
                     ExpeInfo);
-                if not(exist('behavResources.mat'))
-                save('behavResources.mat','TTLInfo')
-                else
-                save('behavResources.mat','TTLInfo','-append')
-                end
+                
                 %% copy ephys files that are ref subtracted and merged
                 if  ExpeInfo.PreProcessingInfo.RefDone{f} && ExpeInfo.PreProcessingInfo.MergeDone{f}==0
                     
@@ -163,7 +154,6 @@ switch ExpeInfo.PreProcessingInfo.IsThereEphys
                     if ExpeInfo.PreProcessingInfo.NumAccelero>0
                         movefile('auxiliary.dat', 'amplifier-accelero.dat');
                     end
-                    
                     system('ndm_mergedat amplifier')
                     
                     disp('file is merged and ref subtracted - copying ...')
@@ -193,8 +183,7 @@ switch ExpeInfo.PreProcessingInfo.IsThereEphys
                     ChanToSaveWithoutChange = 0 :ExpeInfo.PreProcessingInfo.NumWideband-1;
                     ChanToSaveWithoutChange(ChanToSub+1) = [];
                     % Do the subtraction
-                    RefSubtraction_multi('continuous.dat',ExpeInfo.PreProcessingInfo.TotalChannels,1,...
-                        ['M' num2str(ExpeInfo.nmouse)],ChanToSub,RefChannel,ChanToSaveWithoutChange,'frequency',ExpeInfo.PreProcessingInfo.SR);
+                    RefSubtraction_multi('amplifier.dat',ExpeInfo.PreProcessingInfo.NumWideband,1,['M' num2str(ExpeInfo.nmouse)],ChanToSub,RefChannel,ChanToSaveWithoutChange);
                     
                     disp('file is ref subtracted - merging...')
                     % Merge
@@ -202,7 +191,7 @@ switch ExpeInfo.PreProcessingInfo.IsThereEphys
                     if ExpeInfo.PreProcessingInfo.NumAccelero>0
                         movefile('auxiliary.dat', 'amplifier-accelero.dat');
                     end
-                    system('ndm_mergedat amplifier');
+                    system('ndm_mergedat amplifier')
                     
                     disp('file is merged and ref subtracted - copying ...')
                     % copy the file
@@ -229,78 +218,15 @@ switch ExpeInfo.PreProcessingInfo.IsThereEphys
             [FinalFolder filesep BaseFileName '.xml']);
         
         %% concatenate all the files
-        %updated by AG on 25/11/2025 to be windows compatible
-        if length(ExpeInfo.PreProcessingInfo.FolderForConcatenation_Ephys) > 1
-            if ispc
-                % 1) Get ndm_dir
-                if contains(FinalFolder, 'Arsenii')
-                    ndm_dir = 'D:\Arsenii\GitHub\ndm_scripts\ndmanager-plugins\scripts';
-                else
-                    if ~exist('ndm_dir', 'var') || ~isfolder(ndm_dir)
-                        ndm_dir = uigetdir('', 'Select the folder containing ndm scripts (ndm_concatenate, ndm_lfp, etc.)');
-                        if ndm_dir == 0
-                            error('You must select a valid ndm_scripts directory!');
-                        end
-                    end
-                end
-                
-                % 2) Convert FinalFolder to WSL path (this is where the .dat/.xml live)
-                drive_data   = lower(FinalFolder(1));                  % e.g. 'z'
-                wsl_data_dir = strrep(FinalFolder, '\', '/');          % Z:\... -> Z:/...
-                wsl_data_dir = regexprep(wsl_data_dir, '^[A-Za-z]:', ['/mnt/' drive_data]);  % -> /mnt/z/...
-                
-                % 3) Build command: cd into data dir, call ndm_concatenate with ONLY BaseFileName
-                cmd = sprintf(['wsl bash -lc "cd ''%s'' ' ...
-                    '&& ndm_concatenate ''%s''"'], ...
-                    wsl_data_dir, BaseFileName);
-                
-                disp(['Executing: ' cmd])
-                system(cmd);
-                cd(FinalFolder)
-                
-            else
-                % Linux case unchanged
-                system(['ndm_concatenate ' BaseFileName])
-            end
+        if length(ExpeInfo.PreProcessingInfo.FolderForConcatenation_Ephys)>1
+            system(['ndm_concatenate ' BaseFileName])
         else
-            movefile(fullfile(FinalFolder, [BaseFileName '-' sprintf('%02d',f) '.dat']), ...
-                fullfile(FinalFolder, [BaseFileName '.dat']));
+            movefile([FinalFolder filesep BaseFileName '-' sprintf('%02d',f) '.dat'],...
+                [FinalFolder filesep BaseFileName '.dat']);
         end
         
         %% make lfp
-        %updated by AG on 25/07/2025 to be windows compatible        
-        if ispc
-            if contains(FinalFolder, 'Arsenii')
-                ndm_dir = 'D:\Arsenii\GitHub\ndm_scripts\ndmanager-plugins\scripts';
-            else
-                if ~exist('ndm_dir', 'var') || ~isfolder(ndm_dir)
-                    ndm_dir = uigetdir('', 'Select the folder containing ndm_lfp and related scripts. Usually ..\scripts');
-                    if ndm_dir == 0
-                        error('You must select a valid ndm_scripts directory!');
-                    end
-                end
-            end
-            drive_ndm = lower(ndm_dir(1));
-            wsl_ndm_dir = strrep(ndm_dir, '\', '/');
-            wsl_ndm_dir = regexprep(wsl_ndm_dir, '^[A-Za-z]:', ['/mnt/' drive_ndm]);
-            
-            drive_data = lower(FinalFolder(1));
-            wsl_data_dir = strrep(FinalFolder, '\', '/');
-            wsl_data_dir = regexprep(wsl_data_dir, '^[A-Za-z]:', ['/mnt/' drive_data]);
-            
-            cmd = sprintf(['wsl bash -c "cd ''%s'' ' ...
-               '&& export PATH=\\"$PATH:$(pwd)\\" ' ...
-               '&& ./ndm_lfp ''%s/%s''"'], ...
-               wsl_ndm_dir, wsl_data_dir, BaseFileName);
-           
-            disp(['Executing: ' cmd])
-            cd('C:\')
-            
-            system(cmd);
-            cd(FinalFolder)
-        else
-            system(['ndm_lfp ' BaseFileName]);
-        end
+        system(['ndm_lfp ' BaseFileName])
         
         %% create lfp and channels to analyse folders
         InfoLFP = ExpeInfo.InfoLFP;
@@ -355,48 +281,32 @@ switch ExpeInfo.PreProcessingInfo.IsThereEphys
         duration = duration*1e4;
         
         % Concatenation of single session TTLs
-        if isfield(TTLInfo_sess{1},'StopSession')
-            if isempty(TTLInfo_sess{1}.StopSession) % add by BM on 01/05/2022 when we don't have TTL
-                hasStimEpoch = all(cellfun(@(s) isfield(s,'StimEpoch'), TTLInfo_sess)); % add by AG 25/11/2025 to check for StimEpoch in concat case
-                if length(TTLInfo_sess) == 1
-                    TTLInfo = TTLInfo_sess{1};
-                    if hasStimEpoch
-                        try % updated by AG on 25/07/2025 to avoid error
-                            StimEpoch = TTLInfo_sess{1}.StimEpoch;
-                        catch
-                            disp('no StimEpoch found')
-                        end
-                    else
-                        disp('no StimEpoch field in TTLInfo_sess{1}')
-                    end
-                else
-                    TTLInfo.StartSession = TTLInfo_sess{1}.StartSession;
-                    TTLInfo.StopSession = TTLInfo_sess{end}.StopSession;
-                    
-                    if hasStimEpoch
-                        % StimEpoch
-                        Stim = cell(length(TTLInfo_sess),1);
-                        for ittl = 1:length(TTLInfo_sess)
-                            Stim{ittl} = Start(TTLInfo_sess{ittl}.StimEpoch);
-                        end
-                        for ittl=1:(length(TTLInfo_sess)-1)
-                            Stim{ittl+1} = Stim{ittl+1} + (sum(duration(1:ittl)));
-                        end
-                        StimTime = Stim{1};
-                        for ittl = 2:length(TTLInfo_sess)
-                            StimTime = [StimTime; Stim{ittl}];
-                        end
-                        TTLInfo.StimEpoch = intervalSet(StimTime, StimTime);
-                        StimEpoch = TTLInfo.StimEpoch;
-                        clear Stim Stimtime
-                    else
-                        disp('no StimEpoch field in some TTLInfo_sess entries, skipping StimEpoch concatenation')
-                    end
+        if isempty(TTLInfo_sess{1}.StopSession) % add by BM on 01/05/2022 when we don't have TTL
+            if length(TTLInfo_sess) == 1
+                TTLInfo = TTLInfo_sess{1};
+                StimEpoch = TTLInfo_sess{1}.StimEpoch;
+            else
+                TTLInfo.StartSession = TTLInfo_sess{1}.StartSession;
+                TTLInfo.StopSession = TTLInfo_sess{end}.StopSession;
+                % StimEpoch
+                Stim = cell(length(TTLInfo_sess),1);
+                for ittl = 1:length(TTLInfo_sess)
+                    Stim{ittl} = Start(TTLInfo_sess{ittl}.StimEpoch);
                 end
-                save('behavResources.mat','TTLInfo','-append')
-                if exist('StimEpoch')>0
-                    save('behavResources.mat','StimEpoch','-append')
+                for ittl=1:(length(TTLInfo_sess)-1)
+                    Stim{ittl+1} = Stim{ittl+1} + (sum(duration(1:ittl)));
                 end
+                StimTime = Stim{1};
+                for ittl = 2:length(TTLInfo_sess)
+                    StimTime = [StimTime; Stim{ittl}];
+                end
+                TTLInfo.StimEpoch = intervalSet(StimTime, StimTime);
+                StimEpoch = TTLInfo.StimEpoch;
+                clear Stim Stimtime
+            end
+            save('behavResources.mat','TTLInfo','-append')
+            if exist('StimEpoch')>0
+                save('behavResources.mat','StimEpoch','-append')
             end
         end
 
